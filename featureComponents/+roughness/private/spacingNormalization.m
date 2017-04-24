@@ -5,7 +5,7 @@ function newVOI = spacingNormalization(VOI, sizeToNormalize, volumeInfo)
     %% Find pixel spacing in millimeters.
     rowSpacing = abs(volumeInfo{1}.PixelSpacing(1));
     colSpacing = abs(volumeInfo{1}.PixelSpacing(2));
-    depSpacing = abs(volumeInfo{2}.ImagePositionPatient(3) - volumeInfo{1}.ImagePositionPatient(3));
+    depSpacing = abs(volumeInfo{1}.zResolution);
 
     %% Original Coordinates: 
     origSizes = size(VOI);

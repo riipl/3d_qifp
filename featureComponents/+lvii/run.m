@@ -13,8 +13,7 @@ function [ out ] = run( inputs )
     % Find pixel spacing in millimeters in plane and between planes
     ySpacing = abs(infoVOI{1}.PixelSpacing(1));
     xSpacing = abs(infoVOI{1}.PixelSpacing(2));
-    zSpacing = abs(infoVOI{2}.ImagePositionPatient(3) - ...
-        infoVOI{1}.ImagePositionPatient(3));
+    zSpacing = abs(infoVOI{1}.zResolution);
     
     %% Split all radii that are going to be calculated
     radius = strsplit(inputs.sphereRadius, ',');

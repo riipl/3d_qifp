@@ -72,6 +72,17 @@ numSlicesDSO = numel(fieldnames(dicomSegmentationObjectInfo. ...
     ReferencedSeriesSequence.Item_1.ReferencedInstanceSequence));
 zResolutions = zeros(numSlicesDSO,1);
 
+%% Find Z vector direction
+imageOrientation = dicomImageInfo.ImageOrientationPatient;
+dc = zeros(2,3);
+for row=1:2
+    for col=1:3
+        dc(row,col) = imageOrientation((row-1)*3+col);
+    end
+end
+zVector =cross(dc(1,:), dc(2,:));
+
+
 for nSDSO = 1:numSlicesDSO
 %     tmpSDSO  = dicomSegmentationObjectInfo. ...
 %         SharedFunctionalGroupsSequence.Item_1. ...
@@ -82,7 +93,7 @@ for nSDSO = 1:numSlicesDSO
         (['Item_' num2str(nSDSO)]).ReferencedSOPInstanceUID;
 
     tmpDicomImageInfo2 = dicominfo(dcmImageFileArray(tmpSDSO));
-    zResolutions(nSDSO) = tmpDicomImageInfo2.ImagePositionPatient(3);
+    zResolutions(nSDSO) = zVector * tmpDicomImageInfo2.ImagePositionPatient;
     if ((nSDSO > 1) && (zResolutions(nSDSO) == zResolutions(nSDSO-1)))
         continue
     end
@@ -269,6 +280,7 @@ if isfield(dicomImageInfoArray{1}, 'RescaleSlope')
 end
 
 outputStructure.infoVOI = dicomImageInfoArray;
+outputStructure.infoVOI{1}.zResolution = zDicomSegmentationResolution;
 
 try
     if signFlag > 0 
@@ -281,4 +293,5 @@ catch
 end
 outputStructure.segmentationVOI = logical(outputStructure.segmentationVOI);
 outputStructure.segmentationInfo = dicomSegmentationObjectInfo;
+outputStructure.segmentationInfo.zResolution = zDicomSegmentationResolution;
 end

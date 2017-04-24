@@ -25,8 +25,7 @@ symmetric = inputs.symmetric;
     % Find pixel spacing in millimeters in plane and between planes
     ySpacing = abs(volumeInfo{1}.PixelSpacing(1));
     xSpacing = abs(volumeInfo{1}.PixelSpacing(2));
-    zSpacing = abs(volumeInfo{2}.ImagePositionPatient(3) - ...
-        volumeInfo{1}.ImagePositionPatient(3));
+    zSpacing = abs(volumeInfo{1}.zResolution);
 
 
 %% Split distances

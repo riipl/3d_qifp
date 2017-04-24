@@ -11,7 +11,14 @@ function featureCache = processObject(globalState, ...
     %% Input Stage 
     logger('INFO', ['Starting input stage']);
     
-    inputData = inputStageLoad(localInputState, globalState.inputComponentName);
+    try
+        inputData = inputStageLoad(localInputState, globalState.inputComponentName);
+    catch
+        logger('WARN', ['Could not load object with UID ' uidToProcess]);
+        featureCache = {};
+        return;
+    end
+    
     localState = combineStructures(localState, inputData);
 
     logger('INFO', ['Finishing input stage']);
