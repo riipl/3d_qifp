@@ -4,7 +4,10 @@ function [ out ] = run( inputs )
 %   Detailed explanation goes here
     featureRootName = inputs.featureRootName;
     out = struct('featureRootName', featureRootName);
-    out.output = findEdgeSharpness(inputs);
-   
+    try
+        out.output = findEdgeSharpness(inputs);
+    catch
+        out.output = {};
+    end
 end
 

@@ -153,7 +153,11 @@ function featureCache = processObject(globalState, ...
         outputFunction = str2func([outputComponent '.' outputFunctionName]);
         
         % Call the output function
-        outputFunction(preparedOutputConfig);
+        try
+            outputFunction(preparedOutputConfig);
+        catch
+            logger('ERROR', ['Was not able to run output component: ' outputComponent]);
+        end
     end    
     logger('INFO', ['Finishing Output stage']);
     logger('INFO', ['Finished Processing the Object with UID: ' uidToProcess]);
