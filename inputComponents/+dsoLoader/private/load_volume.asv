@@ -11,11 +11,11 @@ function  outputStructure = load_volume(input)
 %
 % Created by:       Sebastian Echegaray 
 % Created on:       2013-04-02
-% Edited by:        Sarah Mattonen 
-%                      - moved scaling by slope and intercept to immediately after dicom read
-%                      - cast the cropped image to double when rescaling
-%                      - updated to scale by slice specific slope and intercept
-% Edited on:        2017-04-06
++% Edited by:        Sarah Mattonen 
+ +%                      - moved scaling by slope and intercept to immediately after dicom read
+ +%                      - cast the cropped image to double when rescaling
+ +%                      - updated to scale by slice specific slope and intercept
+ +% Edited on:        2017-04-06
 
 %% Initialization
 % Copying input parameters to local variables to avoid reuse
@@ -232,16 +232,6 @@ for dicomSegmentationObjectSliceNo = ...
             dicomSegmentationObjectYFirstIndex:dicomSegmentationObjectYLastIndex, ...
             dicomSegmentationObjectXFirstIndex:dicomSegmentationObjectXLastIndex);
 
-        % Sarah moved this here to scale by Intercept and Slope if it exists for each slice 
-        % Also changed to * by slope 
-        if isfield(dicomImageInfo, 'RescaleIntercept')
-             dicomImageSliceCropped = double(dicomImageSliceCropped) + dicomImageInfo.RescaleIntercept;
-        end
-        if isfield(dicomImageInfo, 'RescaleSlope')
-             dicomImageSliceCropped = double(dicomImageSliceCropped) * dicomImageInfo.RescaleSlope;
-        end
-        
-        
         % Store the cropped image and its info into the image stack 
         dicomImageArray(:,:,dicomImageIndex) = dicomImageSliceCropped;
         dicomImageInfoArray{dicomImageIndex} = dicomImageInfo;
@@ -282,14 +272,14 @@ end
 outputStructure.intensityVOI = dicomImageArray;
 
 % Scale by Intercept and Slope if it exists
-% if isfield(dicomImageInfoArray{1}, 'RescaleIntercept')
-%     outputStructure.intensityVOI = outputStructure.intensityVOI + ...
-%         dicomImageInfoArray{1}.RescaleIntercept;
-% end
-% if isfield(dicomImageInfoArray{1}, 'RescaleSlope')
-%     outputStructure.intensityVOI = outputStructure.intensityVOI / ...
-%         dicomImageInfoArray{1}.RescaleSlope;
-% end
+if isfield(dicomImageInfoArray{1}, 'RescaleIntercept')
+    outputStructure.intensityVOI = outputStructure.intensityVOI + ...
+        dicomImageInfoArray{1}.RescaleIntercept;
+end
+if isfield(dicomImageInfoArray{1}, 'RescaleSlope')
+    outputStructure.intensityVOI = outputStructure.intensityVOI / ...
+        dicomImageInfoArray{1}.RescaleSlope;
+end
 
 outputStructure.infoVOI = dicomImageInfoArray;
 outputStructure.infoVOI{1}.zResolution = zDicomSegmentationResolution;
