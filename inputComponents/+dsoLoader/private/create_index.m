@@ -62,6 +62,7 @@ fileDcmArray = {};
 % Create the hash table
     indexTableArray.DcmImageFileTable = containers.Map;
     indexTableArray.DcmSegmentationObjectFileTable = containers.Map;
+    indexTableArray.DcmSegmentationObjectPatientInfoTable = containers.Map;
     indexTableArray.DcmImageFileSeriesNumber = containers.Map;
     indexTableArray.DcmImageFileSeriesLocation = containers.Map;
     indexTableArray.DcmImageFileSeriesLocationsAvailable = ...
@@ -89,47 +90,66 @@ fileDcmArray = {};
                 indexTableArray.DcmSegmentationObjectFileTable( ... 
                     dicomFileInfo.SOPInstanceUID) = ...
                     fileDcmArray{iDcmFile};
+                fileInfo = struct(dicomFileInfo.PatientName);                
+                try
+                    fileInfo.ReferencedSeries = ...
+                        dicomFileInfo.ReferencedSeriesSequence.Item_1.SeriesInstanceUID;
+                catch
+                    fileInfo.ReferencedSeries = '';
+                end
+                indexTableArray.DcmSegmentationObjectPatientInfoTable( ... 
+                    dicomFileInfo.SOPInstanceUID) = fileInfo;
+                
+            % Skip if its a presentation state
+            case 'pr'
+                disp(['File Ignored: ' fileDcmArray{iDcmFile}]);
+                continue;
                 
             % If its just another type of DICOM
             otherwise
-                indexTableArray.DcmImageFileTable( ...
-                    dicomFileInfo.SOPInstanceUID) = ...
-                    fileDcmArray{iDcmFile};
-            
-                % Lets also store the series ID
-                indexTableArray.DcmImageFileSeriesNumber( ...
-                    [dicomFileInfo.SeriesInstanceUID '-' num2str(dicomFileInfo.InstanceNumber)]) = ...
-                    fileDcmArray{iDcmFile};
-                disp([dicomFileInfo.SeriesInstanceUID '-' num2str(dicomFileInfo.InstanceNumber)]);
+                try 
+                    indexTableArray.DcmImageFileTable( ...
+                        dicomFileInfo.SOPInstanceUID) = ...
+                        fileDcmArray{iDcmFile};
 
-                % Find Z vector
-                imageOrientation = dicomFileInfo.ImageOrientationPatient;
-                dc = zeros(2,3);
-                for row=1:2
-                    for col=1:3
-                        dc(row,col) = imageOrientation((row-1)*3+col);
+                    % Lets also store the series ID
+                    indexTableArray.DcmImageFileSeriesNumber( ...
+                        [dicomFileInfo.SeriesInstanceUID '-' num2str(dicomFileInfo.InstanceNumber)]) = ...
+                        fileDcmArray{iDcmFile};
+                    disp([dicomFileInfo.SeriesInstanceUID '-' num2str(dicomFileInfo.InstanceNumber)]);
+
+                    % Find Z vector
+                    imageOrientation = dicomFileInfo.ImageOrientationPatient;
+                    dc = zeros(2,3);
+                    for row=1:2
+                        for col=1:3
+                            dc(row,col) = imageOrientation((row-1)*3+col);
+                        end
                     end
-                end
-                zVector =cross(dc(1,:), dc(2,:));
-                directedZ = zVector * dicomFileInfo.ImagePositionPatient;
-                
-                % Store series and patient location
-                indexTableArray.DcmImageFileSeriesLocation( ...
-                    [dicomFileInfo.SeriesInstanceUID '-' ...
-                    num2str(directedZ)]) = ...
-                    fileDcmArray{iDcmFile};
+                    zVector =cross(dc(1,:), dc(2,:));
+                    directedZ = zVector * dicomFileInfo.ImagePositionPatient;
 
-                % Store all locations available
-                if isKey(indexTableArray.DcmImageFileSeriesLocationsAvailable, ...
-                    dicomFileInfo.SeriesInstanceUID)
-                    prevLocations = indexTableArray.DcmImageFileSeriesLocationsAvailable( ...
-                    dicomFileInfo.SeriesInstanceUID);
-                else
-                    prevLocations = [];
+                    % Store series and patient location
+                    indexTableArray.DcmImageFileSeriesLocation( ...
+                        [dicomFileInfo.SeriesInstanceUID '-' ...
+                        num2str(directedZ)]) = ...
+                        fileDcmArray{iDcmFile};
+
+                    % Store all locations available
+                    if isKey(indexTableArray.DcmImageFileSeriesLocationsAvailable, ...
+                        dicomFileInfo.SeriesInstanceUID)
+                        prevLocations = indexTableArray.DcmImageFileSeriesLocationsAvailable( ...
+                        dicomFileInfo.SeriesInstanceUID);
+                    else
+                        prevLocations = [];
+                    end
+                    indexTableArray.DcmImageFileSeriesLocationsAvailable( ...
+                        dicomFileInfo.SeriesInstanceUID) = ...
+                        [prevLocations, directedZ];
+                catch 
+                    warning(['Invalid Dicom Image: ' fileDcmArray{iDcmFile}]);
+                    continue;
                 end
-                indexTableArray.DcmImageFileSeriesLocationsAvailable( ...
-                    dicomFileInfo.SeriesInstanceUID) = ...
-                    [prevLocations, directedZ];
 
         end
         
