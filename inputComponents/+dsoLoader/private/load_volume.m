@@ -29,7 +29,6 @@ DcmImageFileSeriesLocationsAvailable = ...
 configurationArray = struct();
 configurationArray.LOAD_VOLUME_PADDING = input.padding;
 
-
 %% Configuration and Validation
 
 % Check that the padding is set
@@ -82,7 +81,6 @@ for row=1:2
 end
 zVector =cross(dc(1,:), dc(2,:));
 
-
 for nSDSO = 1:numSlicesDSO
 %     tmpSDSO  = dicomSegmentationObjectInfo. ...
 %         SharedFunctionalGroupsSequence.Item_1. ...
@@ -109,8 +107,8 @@ xDicomSegmentationResolution = dicomImageInfo.PixelSpacing(2);
 % Z voxel spacing determined by the minimum distance between slices
 zDicomSegmentationResolution = min(abs(diff(zResolutions)));
 
-% Ugly hack to see if the DSO slices are continous
-if any((diff(zResolutions) - min(diff(zResolutions))) > 0.0001)
+% Ugly hack to see if the DSO slices are within 10% of the mean distance
+if any(((diff(zResolutions) - mean(diff(zResolutions)))/mean(diff(zResolutions))) > 0.1)
     warning('DSO has non-contiguous slices');
 end
 

@@ -167,6 +167,7 @@ function runPipeline(config)
         end
         for iUid = 1:numUid
             [oUid,localFeatureCache, localFeatureConfig] = fetchNext(oResults);
+            disp(oResults(oUid).Diary);
             logger('INFO', ['Received values from queue position ' num2str(oUid)]);
             featureCache{oUid} = localFeatureCache;
             featureConfig{oUid} = localFeatureConfig;

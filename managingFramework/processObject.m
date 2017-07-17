@@ -45,7 +45,7 @@ function [featureCache, featureConfig] = processObject(globalState, ...
         preprocessingName = findConfigValue(localPreprocessingConfig.configArray, ...
             'functionToRun');
         if isnan(preprocessingName)
-            continue1
+            continue
         end
         logger('INFO', ['Calling Preprocessing component ' preprocessingComponent]);
         
@@ -166,11 +166,11 @@ function [featureCache, featureConfig] = processObject(globalState, ...
         outputFunction = str2func([outputComponent '.' outputFunctionName]);
         
         % Call the output function
-        %try
+        try
             outputFunction(preparedOutputConfig);
-        %catch
-        %    logger('ERROR', ['Was not able to run output component: ' outputComponent]);
-        %end
+        catch
+            logger('ERROR', ['Was not able to run output component: ' outputComponent]);
+        end
     end    
     logger('INFO', ['Finishing Output stage']);
     logger('INFO', ['Finished Processing the Object with UID: ' uidToProcess]);
