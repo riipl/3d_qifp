@@ -3,6 +3,7 @@ function output( inputs )
 %   Detailed explanation goes here
 %% Fix output so we can reuse the code (embed it in a cell structure
     inputs.output = {inputs.output};
+    inputs.outputConfiguration = {inputs.outputConfiguration};
 
 %% Calculate Results
     results = generateCell(inputs);
