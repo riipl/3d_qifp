@@ -61,6 +61,22 @@ function [ outCell ] = generateCell( input )
                 rootName = rootNames{irootNames};
                 outputs =  outputComponent.(rootName);
                 outputConfiguration =  componentConfiguration.(rootName);
+                
+                % Add settings as features in the CSV 
+                if input.featureConfiguration
+                    settingNames = fieldnames(outputConfiguration);
+                    nSettings = numel(settingNames);
+                    settingStruct = cell(1, nSettings);
+                    for iSetting = 1:nSettings
+                        settingStruct{iSetting} = struct( ...
+                            'name', [input.featureConfigurationPrefix ... 
+                            input.featureConfigurationSeparator settingNames{iSetting}], ...
+                            'value', outputConfiguration.(settingNames{iSetting}) ...
+                        );
+                    end
+                    outputs = [settingStruct, outputs];
+                end
+            
                 nOutputs = numel(outputs);
                 % Check if we are prepending Category Names, if so append 
                 % category name using defined separator
@@ -161,7 +177,22 @@ results = cell(nFeatures, nCases);
                 rootName = rootNames{irootNames};
                 outputs =  outputComponent.(rootName);
                 outputConfiguration =  componentConfiguration.(rootName);
-
+                
+                % Add settings as features in the CSV 
+                if input.featureConfiguration
+                    settingNames = fieldnames(outputConfiguration);
+                    nSettings = numel(settingNames);
+                    settingStruct = cell(1, nSettings);
+                    for iSetting = 1:nSettings
+                        settingStruct{iSetting} = struct( ...
+                            'name', [input.featureConfigurationPrefix ... 
+                            input.featureConfigurationSeparator settingNames{iSetting}], ...
+                            'value', outputConfiguration.(settingNames{iSetting}) ...
+                        );
+                    end
+                    outputs = [settingStruct, outputs];
+                end
+                
                 nOutputs = numel(outputs);
                 % Check if we are prepending Category Names, if so append 
                 % category name using defined separator
