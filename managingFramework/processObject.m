@@ -1,4 +1,4 @@
-function featureCache = processObject(globalState, ...
+function [featureCache, featureConfig] = processObject(globalState, ...
     globalFeatureConfig, inputState, globalPreprocessingConfig, ...
     globalOutputState, uidToProcess)
 %PROCESSOBJECT Summary of this function goes here
@@ -16,6 +16,7 @@ function featureCache = processObject(globalState, ...
     catch
         logger('WARN', ['Could not load object with UID ' uidToProcess]);
         featureCache = {};
+        featureConfig = {};
         return;
     end
     
@@ -70,9 +71,11 @@ function featureCache = processObject(globalState, ...
     logger('INFO', ['Starting Feature Computation stage']);
     % Initialize storage variables
     featureComputationOutput = struct();
+    featureComputationConfigurations = struct();
     featureComponentName = cell(globalState.nFeatures,1);
     featureRootName = cell(globalState.nFeatures,1);
     featureResults = cell(globalState.nFeatures,1);
+    featureConfigurations = cell(globalState.nFeatures,1);
     
     % Compute each feature in parallel 
     if strcmp(globalState.parallelMode, 'feature')
@@ -88,24 +91,28 @@ function featureCache = processObject(globalState, ...
         end
         for iFeature = 1:globalState.nFeatures
             [cFeature,localFeatureResults, localFeatureComponentName, ...
-                localFeatureRootName] = fetchNext(fResults);
+                localFeatureRootName, localFeatureConfiguration] = ...
+                fetchNext(fResults);
             logger('INFO', ['Received values from feature in queue position ' num2str(iFeature)]);
 
             featureResults{cFeature} = localFeatureResults;
             featureComponentName{cFeature} = localFeatureComponentName;
             featureRootName{cFeature} = localFeatureRootName;
+            featureConfigurations{cFeature} = localFeatureConfiguration;
         end
     % Compute each feature serially   
     else
         for iFeature = 1:globalState.nFeatures
             featureComponent = globalState.featuresToCompute{iFeature};
 
-            [localFeatureResults, localFeatureComponentName, localFeatureRootName] = ...
+            [localFeatureResults, localFeatureComponentName, ...
+                localFeatureRootName, localFeatureConfiguration] = ...
                 featureStageCompute(globalFeatureConfig, ...
                 localState, featureComponent);
             featureResults{iFeature} = localFeatureResults;
             featureComponentName{iFeature} = localFeatureComponentName;
             featureRootName{iFeature} = localFeatureRootName;
+            featureConfigurations{iFeature} = localFeatureConfiguration;
         end
     end
     
@@ -113,10 +120,16 @@ function featureCache = processObject(globalState, ...
     for iFeature = 1:globalState.nFeatures
         featureComputationOutput.(featureComponentName{iFeature}). ...
             (featureRootName{iFeature}) = featureResults{iFeature};
+        featureComputationConfigurations.(featureComponentName{iFeature}). ...
+            (featureRootName{iFeature}) = featureConfigurations{iFeature};
     end
+    
     featureComputationOutput.uid = localState.processingUid;
     featureCache = featureComputationOutput;
+    featureConfig = featureComputationConfigurations;
     localState.output = featureComputationOutput;
+    localState.outputConfiguration = featureComputationConfigurations;
+    
     logger('INFO', ['Finishing Feature Computation stage']);
 
     %% Output Stage

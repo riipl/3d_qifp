@@ -1,4 +1,4 @@
-function configurationStruct = prepareInput(inputArray, internalStruct, featureStruct)
+function configurationStruct = prepareInput(inputArray, internalStruct, featureStruct, excludeInternal)
 %prepareInput prepares a configuration structure to be passed to a feature
 %
 % Description: Features in the QIFP describe what inputs they are expecting
@@ -17,6 +17,10 @@ function configurationStruct = prepareInput(inputArray, internalStruct, featureS
 %                  this feature set by the user when setting the
 %                  pipeline
 %
+%   excludeInternal: [optional] defaults to false. Return a configuration 
+%                    array without any internal fields. Useful to store
+%                    any running parameters. 
+%
 % Output:
 %   configurationStruct: Structure ready to be passed as an input
 %                       to a QIFP feature module containing all values
@@ -26,9 +30,12 @@ function configurationStruct = prepareInput(inputArray, internalStruct, featureS
 %% Initialization
     % We only accept between 2 and 3 arguments as input. If featureStruct
     % is missing we initialize it to an empty struct
-    narginchk(2,3);
-    if nargin == 2
+    narginchk(2,4);
+    if nargin < 3
         featureStruct = struct();
+    end
+    if nargin < 4
+        excludeInternal = false;
     end
     
     % Initialize our output variable
@@ -44,6 +51,9 @@ function configurationStruct = prepareInput(inputArray, internalStruct, featureS
         % Check if the input value is internal or from the feature
         % configuration file
         if isfield(input, 'internal') && input.internal
+            if excludeInternal
+                continue;
+            end
             valueStruct = internalStruct;
         else
             valueStruct = featureStruct;

@@ -5,6 +5,8 @@ function [ outCell ] = generateCell( input )
 %% Initialization
     % Copying input parameters to local variables to avoid reuse
     outputsArray = input.output;
+    outputsConfigurationArray = input.outputConfiguration;
+    
     nCases = numel(outputsArray);
     nameList = containers.Map();
 
@@ -20,6 +22,7 @@ function [ outCell ] = generateCell( input )
     %Go across all cases
     for iCase = 1:nCases
         outputArray = outputsArray{iCase};
+        outputConfigurationArray = outputsConfigurationArray{iCase};
         if isempty(outputArray)
             continue;
         end
@@ -35,9 +38,13 @@ function [ outCell ] = generateCell( input )
                 continue
             end
             
+            componentConfiguration = ...
+                outputConfigurationArray.(componentNames{iComponentName});
+    
+            
             outputComponent = outputsArray{iCase}.(componentName);
             % Allow rootnames in case we ran the same feature with
-            % different paraemters
+            % different parameters
             rootNames = fieldnames(outputComponent);
             nrootNames = numel(rootNames);
             
@@ -48,11 +55,40 @@ function [ outCell ] = generateCell( input )
                 prefix = '';
             end
             
+            rootPrefix = prefix;
             % Go across all outputs
             for irootNames = 1:nrootNames
                 rootName = rootNames{irootNames};
                 outputs =  outputComponent.(rootName);
+                outputConfiguration =  componentConfiguration.(rootName);
+                
+                % Add settings as features in the CSV 
+                if input.featureConfiguration
+                    settingNames = fieldnames(outputConfiguration);
+                    nSettings = numel(settingNames);
+                    settingStruct = cell(1, nSettings);
+                    for iSetting = 1:nSettings
+                        settingStruct{iSetting} = struct( ...
+                            'name', [input.featureConfigurationPrefix ... 
+                            input.featureConfigurationSeparator settingNames{iSetting}], ...
+                            'value', outputConfiguration.(settingNames{iSetting}) ...
+                        );
+                    end
+                    outputs = [settingStruct, outputs];
+                end
+            
                 nOutputs = numel(outputs);
+                % Check if we are prepending Category Names, if so append 
+                % category name using defined separator
+                if input.categoryNames
+                    if isfield(outputConfiguration, 'category')
+                        categoryName = outputConfiguration.category;
+                    else
+                        categoryName = input.undefinedCategory;
+                    end
+                    prefix = [categoryName, input.categorySeparator, rootPrefix];
+                end
+                
                 
                 for iOutput = 1:nOutputs
                     output = outputs{iOutput};
@@ -98,6 +134,8 @@ results = cell(nFeatures, nCases);
 
     for iCase = 1:nCases
         outputArray = outputsArray{iCase};
+        outputConfigurationArray = outputsConfigurationArray{iCase};
+        
         if isempty(outputArray)
             continue;
         end
@@ -107,13 +145,18 @@ results = cell(nFeatures, nCases);
         for iComponentName = 1:nComponentName
             % Name of a particular feature component
             componentName = componentNames{iComponentName};
-            
+
             % If its the uid then skip it, we created that before
             if strcmp(componentName, 'uid')
                 results{nameList('uid').row, iCase} = ...
                     outputsArray{iCase}.(componentName);
                 continue
             end
+            
+            componentConfiguration = ...
+                outputConfigurationArray.(componentNames{iComponentName});
+
+            
             
             outputComponent = outputsArray{iCase}.(componentName);
             % Allow rootnames in case we ran the same feature with
@@ -128,11 +171,39 @@ results = cell(nFeatures, nCases);
                 prefix = '';
             end
             
+            rootPrefix = prefix;
             % Go across all outputs
             for irootNames = 1:nrootNames
                 rootName = rootNames{irootNames};
                 outputs =  outputComponent.(rootName);
+                outputConfiguration =  componentConfiguration.(rootName);
+                
+                % Add settings as features in the CSV 
+                if input.featureConfiguration
+                    settingNames = fieldnames(outputConfiguration);
+                    nSettings = numel(settingNames);
+                    settingStruct = cell(1, nSettings);
+                    for iSetting = 1:nSettings
+                        settingStruct{iSetting} = struct( ...
+                            'name', [input.featureConfigurationPrefix ... 
+                            input.featureConfigurationSeparator settingNames{iSetting}], ...
+                            'value', outputConfiguration.(settingNames{iSetting}) ...
+                        );
+                    end
+                    outputs = [settingStruct, outputs];
+                end
+                
                 nOutputs = numel(outputs);
+                % Check if we are prepending Category Names, if so append 
+                % category name using defined separator
+                if input.categoryNames
+                    if isfield(outputConfiguration, 'category')
+                        categoryName = outputConfiguration.category;
+                    else
+                        categoryName = input.undefinedCategory;
+                    end
+                    prefix = [categoryName, input.categorySeparator, rootPrefix];
+                end
                 
                 for iOutput = 1:nOutputs
                     output = outputs{iOutput};
