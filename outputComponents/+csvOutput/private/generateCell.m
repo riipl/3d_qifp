@@ -251,5 +251,13 @@ results = cell(nFeatures, nCases);
 
     %% Concatenate Labels with data
     outCell = [resultsLabel, results];
+    
+    if (input.sort)
+        uidRow = outCell(1,:);
+        restSorted = sortrows(outCell(2:end,:),1);
+        sortedOutCell = vertcat(uidRow, restSorted);
+        outCell = sortedOutCell;
+    end
+    
 end
 
