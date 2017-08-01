@@ -21,9 +21,6 @@ function output( inputs )
 
     minValue = round(level - window/2);
     maxValue = round(level + window/2);
-    disp(minValue)
-    disp(maxValue)
-
 
     %% Create segmentation proof
     segmentationProof = showSegmentationProof(volumeVOI, segVOI, ...
