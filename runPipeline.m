@@ -109,6 +109,7 @@ function runPipeline(config)
     
     % Store all feature results for output
     featureCache = cell(numUid,1);
+    featureConfig = cell(numUid,1);
     
     logger('INFO', ['Feature Computation Stage Initialization Complete']);
 
@@ -160,14 +161,16 @@ function runPipeline(config)
         for iUid = 1:numUid
             localUid = uidToProcess{iUid};
             logger('INFO', ['Queued UID ' localUid ' in position ' num2str(iUid)]);
-            oResults(iUid) = parfeval(p, @processObject, 1, ...
+            oResults(iUid) = parfeval(p, @processObject, 2, ...
                 globalState, globalFeatureConfig, inputState, ...
                 globalPreprocessingConfig, globalOutputState, localUid);
         end
         for iUid = 1:numUid
-            [oUid,localFeatureCache] = fetchNext(oResults);
+            [oUid,localFeatureCache, localFeatureConfig] = fetchNext(oResults);
+            disp(oResults(oUid).Diary);
             logger('INFO', ['Received values from queue position ' num2str(oUid)]);
             featureCache{oUid} = localFeatureCache;
+            featureConfig{oUid} = localFeatureConfig;
         end
         
     % Sequential    
@@ -175,7 +178,7 @@ function runPipeline(config)
         logger('INFO', ['Starting the run in Sequential Mode']);
         for iUid = 1:numUid
             localUid = uidToProcess{iUid};
-            featureCache{iUid} = processObject(globalState, globalFeatureConfig, ...
+            [featureCache{iUid}, featureConfig{iUid}] = processObject(globalState, globalFeatureConfig, ...
                 inputState, globalPreprocessingConfig,  globalOutputState, localUid);
         end
     end
@@ -185,6 +188,7 @@ function runPipeline(config)
     % Run each output component that has final turned on
     finalOutputState = globalState;
     finalOutputState.output = featureCache;
+    finalOutputState.outputConfiguration = featureConfig;
     
     for iOutput = 1:globalState.nOutputs
         outputComponent = globalState.outputToRun{iOutput};

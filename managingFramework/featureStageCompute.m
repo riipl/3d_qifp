@@ -1,6 +1,6 @@
-function [featureResults, featureComponentName, featureRootName] = ...
-    featureStageCompute(globalFeatureConfig, localState, ...
-    featureComponent)
+function [featureResults, featureComponentName, featureRootName, ...
+    featureConfiguration] = featureStageCompute(globalFeatureConfig, ...
+    localState, featureComponent)
 %FEATURESTAGECOMPUTE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -27,6 +27,7 @@ featureOutput = featureFunction(preparedFeatureConfig);
 featureResults = featureOutput.output;
 featureComponentName= featureComponent;
 featureRootName = featureOutput.featureRootName;
-
+featureConfiguration = prepareInput(localFeatureConfig.inputArray, ...
+                localState, globalFeatureConfig.(featureComponent), true);
 end
 
