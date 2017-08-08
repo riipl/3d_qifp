@@ -1,4 +1,3 @@
-
 function  outputStructure = load_volume(input)
 % LOAD_VOLUME this function receives a Dicom Segmentation file and an table
 %   with the Dicom Images files, then it loads a region of interest
