@@ -17,6 +17,10 @@ function  outputStructure = load_volume(input)
 %                      - updated to scale by slice specific slope and intercept
 % Edited on:        2017-04-06
 
+%% Set custom dicom dictionary
+dicomdictpath = strcat(strrep(which(mfilename),[mfilename '.m'],''), 'dicom-dict.txt');
+dicomdict('set', dicomdictpath);
+
 %% Initialization
 % Copying input parameters to local variables to avoid reuse
 DcmSegmentationObjectFileTable = input.DcmSegmentationObjectFileTable;
