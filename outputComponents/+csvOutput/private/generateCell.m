@@ -15,8 +15,10 @@ function [ outCell ] = generateCell( input )
     
 %% Save one column for the UID
     row = 1;
-    nameList('uid') = struct('row', row);
-    row = row + 1;
+    if input.showUid
+        nameList('uid') = struct('row', row);
+        row = row + 1;
+    end
     
 %% Find all features names across all cases
     %Go across all cases
@@ -148,8 +150,10 @@ results = cell(nFeatures, nCases);
 
             % If its the uid then skip it, we created that before
             if strcmp(componentName, 'uid')
-                results{nameList('uid').row, iCase} = ...
-                    outputsArray{iCase}.(componentName);
+                if input.showUid
+                    results{nameList('uid').row, iCase} = ...
+                        outputsArray{iCase}.(componentName);
+                end
                 continue
             end
             
