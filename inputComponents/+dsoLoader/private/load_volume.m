@@ -18,8 +18,8 @@ function  outputStructure = load_volume(input)
 % Edited on:        2017-04-06
 
 %% Set custom dicom dictionary
-dicomdictpath = strcat(strrep(which(mfilename),[mfilename '.m'],''), 'dicom-dict.txt');
-dicomdict('set', dicomdictpath);
+dicomDictPath = strcat(strrep(which(mfilename),[mfilename '.m'],''), 'dicom-dict.txt');
+dicomdict('set', dicomDictPath);
 
 %% Initialization
 % Copying input parameters to local variables to avoid reuse
