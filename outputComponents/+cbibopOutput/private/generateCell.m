@@ -13,7 +13,7 @@ function [ outCell ] = generateCell( input )
     % Statistics name and functions
     statisticFunctions = statistics();
     
-%% Save one column for the UID
+%% Save one row for the UID
     row = 1;
     if input.showUid
         nameList('uid') = struct('row', row);
@@ -82,13 +82,13 @@ function [ outCell ] = generateCell( input )
                 nOutputs = numel(outputs);
                 % Check if we are prepending Category Names, if so append 
                 % category name using defined separator
+                categoryName = '';
                 if input.categoryNames
                     if isfield(outputConfiguration, 'category')
                         categoryName = outputConfiguration.category;
                     else
                         categoryName = input.undefinedCategory;
                     end
-                    prefix = [categoryName, input.categorySeparator, rootPrefix];
                 end
                 
                 
@@ -103,7 +103,8 @@ function [ outCell ] = generateCell( input )
                         % If the key is already there then do not add it
                         if ~isKey(nameList, featureName)
                             nameList(featureName) = struct('row', row, ...
-                                    'componentName', componentName);
+                                    'componentName', componentName, ...
+                                    'categoryName', categoryName);
                             row = row + 1;
                         end
                         
@@ -119,7 +120,8 @@ function [ outCell ] = generateCell( input )
                             % If the key is already there then do not add it
                             if ~isKey(nameList, featureName)
                                 nameList(featureName) = struct('row', row, ...
-                                    'componentName', componentName);
+                                    'componentName', componentName, ...
+                                    'categoryName', categoryName);
                                 row = row + 1;
                             end
                         end
@@ -156,11 +158,10 @@ results = cell(nFeatures, nCases);
                 end
                 continue
             end
-            
+                       
             componentConfiguration = ...
                 outputConfigurationArray.(componentNames{iComponentName});
-
-            
+                       
             
             outputComponent = outputsArray{iCase}.(componentName);
             % Allow rootnames in case we ran the same feature with
@@ -206,7 +207,6 @@ results = cell(nFeatures, nCases);
                     else
                         categoryName = input.undefinedCategory;
                     end
-                    prefix = [categoryName, input.categorySeparator, rootPrefix];
                 end
                 
                 for iOutput = 1:nOutputs
@@ -252,9 +252,30 @@ results = cell(nFeatures, nCases);
         featureRow  = featureInfo.row;
         resultsLabel{featureRow} = featureName;
     end
+    
+    %% Create category column
+    if input.categoryNames
+        categoryLabel = cell(nFeatures, 1);
+        featureNames = nameList.keys;
+
+        for iFeature = 1:nFeatures
+            featureInfo = nameList(featureNames{iFeature});
+            featureRow  = featureInfo.row;
+            if isfield(featureInfo, 'categoryName')
+                featureCategory  = featureInfo.categoryName;
+            else
+                featureCategory  = '';
+            end
+            categoryLabel{featureRow} = featureCategory;
+        end    
+    end
 
     %% Concatenate Labels with data
     outCell = [resultsLabel, results];
+    
+    if input.categoryNames
+        outCell = [categoryLabel, outCell];
+    end
     
     if (input.sort)
         uidRow = outCell(1,:);
