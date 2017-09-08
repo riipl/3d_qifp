@@ -147,32 +147,18 @@ fileDcmArray = {};
                     % Create a structure with information of the slice to
                     % try and find slices inbetween other intensity values.
                     sliceInformation = struct();
-                    
                     % Z direction when loading images
                     sliceInformation.directedZ = directedZ;
-                    
                     % If acquisitionTime exists:
                     if (isfield(dicomFileInfo, 'AcquisitionTime'))
                         acquisitionTime = dicomFileInfo.AcquisitionTime;
-                        % And is not unknown
-                        if (~(strcmp(acquisitionTime, 'unknown') || isempty(acquisitionTime)))
-                            sliceInformation.acquisitionTime = acquisitionTime;
+                        if (strcmp(acquisitionTime, 'unknown') || strcmp(str(acquisitionTime), ''))
                         end
                     end
-                    
-                    % Add Instance Number just in case there is not
-                    % acquisition time
-                    if (isfield(dicomFileInfo, 'InstanceNumber'))
-                        instanceNumber = dicomFileInfo.InstanceNumber;
-                        % And is not unknown
-                        if (~(strcmp(instanceNumber, 'unknown') || isempty(instanceNumber)))
-                            sliceInformation.instanceNumber = instanceNumber;
-                        end
-                    end                   
-                    
+                    sliceInformation.acquisitionTime
                     indexTableArray.DcmImageFileSeriesLocationsAvailable( ...
                         dicomFileInfo.SeriesInstanceUID) = ...
-                        [prevLocations, sliceInformation];
+                        [prevLocations, directedZ];
                 catch 
                     warning(['Invalid Dicom Image: ' fileDcmArray{iDcmFile}]);
                     continue;

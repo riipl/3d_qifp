@@ -87,8 +87,8 @@ zVector =cross(dc(1,:), dc(2,:));
 
 % Also save instance numbers and acquisition times for helping with loading
 % later on.
-dicomAcquisitionTimes = double.empty(numSlicesDSO, 0);
-dicomInstanceNumbers = double.empty(numSlicesDSO, 0);
+dicomAcquisitionTimes = empty(numSlicesDSO, 1);
+dicomInstanceNumbers = empty(numSliceDSO, 1);
 
 for nSDSO = 1:numSlicesDSO
     tmpSDSO = dicomSegmentationObjectInfo. ...
@@ -103,7 +103,7 @@ for nSDSO = 1:numSlicesDSO
         acquisitionTime = tmpDicomImageInfo2.AcquisitionTime;
         % And is not unknown
         if (~(strcmp(acquisitionTime, 'unknown') || isempty(acquisitionTime)))
-            dicomAcquisitionTimes(nSDSO) = int32(str2double(acquisitionTime));
+            dicomAcquisitionTimes(nSDSO) = acquisitionTime;
         end
     end
     
@@ -112,7 +112,7 @@ for nSDSO = 1:numSlicesDSO
         instanceNumber = tmpDicomImageInfo2.InstanceNumber;
         % And is not unknown
         if (~(strcmp(instanceNumber, 'unknown') || isempty(instanceNumber)))
-            dicomInstanceNumbers(nSDSO) = int32(str2double(instanceNumber));
+            dicomInstanceNumbers(nSDSO) = instanceNumber;
         end
     end    
     
@@ -179,24 +179,21 @@ for iMissingSlice = 1:nMissingSlices
         inbetweenLocations(missingSlicesIndex(iMissingSlice));
     % Check if Acquisition Time is available.
     if (isfield(missingSliceInfo, 'acquisitionTime'))
-        if ((int32(str2double(missingSliceInfo.acquisitionTime)) < minAcquisitionTime) || ...
-                int32(str2double(missingSliceInfo.acquisitionTime)) > maxAcquisitionTime )
+        if ((missingSliceInfo.acquisitionTime < minAcquisitionTime) || ...
+                missingSliceInfo.acquisitionTime > maxAcquisitionTime )
             disp('Multiple phases found in the series.');
-            slicesAdded = slicesAdded - 1;
             continue;
         end
     elseif (isfield(missingSliceInfo, 'instanceNumber'))
         warning('Acquisition time not available in missing slice, using instance number to group phases');
-        if ((int32(str2double(missingSliceInfo.instanceNumber)) < minInstanceNumber) || ...
-                int32(str2double(missingSliceInfo.instanceNumber)) > maxInstanceNumber )
+        if ((missingSliceInfo.instanceNumber < minInstanceNumber) || ...
+                missingSliceInfo.instanceNumber > maxInstanceNumber )
             disp('Multiple phases found in the series.');
-            slicesAdded = slicesAdded - 1;
             continue;
         end
     else
-        warning('Couldn''t find acquisition time nor instance number in the metadata to separate slices, possible corruption in results');
+        warning('Couldn''t find acquisition time nor ');
     end
-    
     missingSlice = missingSlices(iMissingSlice);
     insertPlace = find(diff((zResolutions - missingSlice) > 0));
     zResolutions = [zResolutions(1:insertPlace); ...
