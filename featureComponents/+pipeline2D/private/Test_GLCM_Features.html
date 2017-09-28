@@ -1,0 +1,257 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>Test_GLCM_Features</title>
+      <meta name="generator" content="MATLAB 7.0.1">
+      <meta name="date" content="2010-04-05">
+      <meta name="m-file" content="Test_GLCM_Features"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body><pre class="codeinput"><span class="comment">% Timing improvement of</span>
+<span class="comment">% GLCM_Features3.m [non vectorized without ismember] and</span>
+<span class="comment">% GLCM_Features4.m [vectorized without ismember] over</span>
+<span class="comment">% GLCM_Features1.m [non vectorized with ismember] and</span>
+<span class="comment">% GLCM_Features2.m [ vectorized with ismember]</span>
+
+clear <span class="string">all</span>
+
+offsetmat = [];
+noffs = 10;
+<span class="keyword">for</span> i = 1:noffs
+    offsetmat = [offsetmat; i*[1 0]];
+    I = imread(<span class="string">'circuit.tif'</span>); GLCM2 = graycomatrix(I,<span class="keyword">...</span>
+        <span class="string">'NumLevels'</span>,64,<span class="string">'Offset'</span>,offsetmat);
+
+    tic; stats1 = GLCM_Features1(GLCM2,0); t1(i) = toc;
+    clear <span class="string">stats1</span>
+
+    t = cputime; stats1 = GLCM_Features1(GLCM2,0); ct1(i) = cputime-t;
+    <span class="comment">%clear stats1</span>
+
+
+    tic; stats2 = GLCM_Features2(GLCM2,0); t2(i) = toc;
+    clear <span class="string">stats2</span>
+
+    t = cputime; stats2 = GLCM_Features2(GLCM2,0); ct2(i) = cputime-t;
+    <span class="comment">%clear stats2</span>
+
+    tic; stats3 = GLCM_Features3(GLCM2,0); t3(i) = toc;
+    clear <span class="string">stats3</span>
+
+    t = cputime; stats3 = GLCM_Features3(GLCM2,0); ct3(i) = cputime-t;
+    <span class="comment">%clear stats3</span>
+
+    tic; stats4 = GLCM_Features4(GLCM2,0); t4(i) = toc;
+    clear <span class="string">stats4</span>
+
+    t = cputime; stats4 = GLCM_Features4(GLCM2,0); ct4(i) = cputime-t;
+    <span class="comment">%clear stats4</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">% Error analysis</span>
+diff_err12 = diffStructFields(stats1, stats2, noffs);
+diff_err13 = diffStructFields(stats1, stats3, noffs);
+diff_err14 = diffStructFields(stats1, stats4, noffs);
+
+<span class="comment">% Timing Plots</span>
+figure; subplot(2,1,1);
+            hold <span class="string">on</span>
+            plot(t1,<span class="string">'-*'</span>);
+            plot(t2,<span class="string">':sr'</span>);
+            <span class="comment">%plot(t3,'-x');</span>
+            <span class="comment">%plot(t4,':dr');</span>
+            xlabel(<span class="string">'No. of GLCMs input'</span>);
+            ylabel(<span class="string">'Execution time (secs)'</span>);
+            legend(<span class="string">'GLCM\_Features1'</span>,<span class="string">'GLCM\_Features2'</span>);
+            hold <span class="string">off</span>
+       subplot(2,1,2);
+            hold <span class="string">on</span>
+            plot(ct1,<span class="string">'-*'</span>);
+            plot(ct2,<span class="string">':sr'</span>);
+            <span class="comment">%plot(ct3,'-x');</span>
+            <span class="comment">%plot(ct4,':dr');</span>
+            xlabel(<span class="string">'No. of GLCMs input'</span>);
+            ylabel(<span class="string">'CPU time (secs)'</span>);
+            legend(<span class="string">'GLCM\_Features1'</span>,<span class="string">'GLCM\_Features2'</span>);
+            hold <span class="string">off</span>
+
+figure; subplot(2,1,1);
+            hold <span class="string">on</span>
+            <span class="comment">%plot(t1,'-*');</span>
+            <span class="comment">%plot(t2,':sr');</span>
+            plot(t3,<span class="string">'-x'</span>);
+            plot(t4,<span class="string">':dr'</span>);
+            xlabel(<span class="string">'No. of GLCMs input'</span>);
+            ylabel(<span class="string">'Execution time (secs)'</span>);
+            legend(<span class="string">'GLCM\_Features3'</span>,<span class="string">'GLCM\_Features4'</span>);
+            hold <span class="string">off</span>
+       subplot(2,1,2);
+            hold <span class="string">on</span>
+            <span class="comment">%plot(ct1,'-*');</span>
+            <span class="comment">%plot(ct2,':sr');</span>
+            plot(ct3,<span class="string">'-x'</span>);
+            plot(ct4,<span class="string">':dr'</span>);
+            xlabel(<span class="string">'No. of GLCMs input'</span>);
+            ylabel(<span class="string">'CPU time (secs)'</span>);
+            legend(<span class="string">'GLCM\_Features3'</span>,<span class="string">'GLCM\_Features4'</span>);
+            hold <span class="string">off</span>
+</pre><img vspace="5" hspace="5" src="Test_GLCM_Features_01.png"> <img vspace="5" hspace="5" src="Test_GLCM_Features_02.png"> <p class="footer"><br>
+         Published with MATLAB&reg; 7.0.1<br></p>
+      <!--
+##### SOURCE BEGIN #####
+% Timing improvement of 
+% GLCM_Features3.m [non vectorized without ismember] and
+% GLCM_Features4.m [vectorized without ismember] over 
+% GLCM_Features1.m [non vectorized with ismember] and 
+% GLCM_Features2.m [ vectorized with ismember]
+
+clear all
+
+offsetmat = [];
+noffs = 10;
+for i = 1:noffs
+    offsetmat = [offsetmat; i*[1 0]];
+    I = imread('circuit.tif'); GLCM2 = graycomatrix(I,...
+        'NumLevels',64,'Offset',offsetmat);
+    
+    tic; stats1 = GLCM_Features1(GLCM2,0); t1(i) = toc;
+    clear stats1 
+    
+    t = cputime; stats1 = GLCM_Features1(GLCM2,0); ct1(i) = cputime-t;
+    %clear stats1
+                        
+    
+    tic; stats2 = GLCM_Features2(GLCM2,0); t2(i) = toc;
+    clear stats2
+    
+    t = cputime; stats2 = GLCM_Features2(GLCM2,0); ct2(i) = cputime-t;
+    %clear stats2
+    
+    tic; stats3 = GLCM_Features3(GLCM2,0); t3(i) = toc;
+    clear stats3
+    
+    t = cputime; stats3 = GLCM_Features3(GLCM2,0); ct3(i) = cputime-t;
+    %clear stats3
+    
+    tic; stats4 = GLCM_Features4(GLCM2,0); t4(i) = toc;
+    clear stats4
+    
+    t = cputime; stats4 = GLCM_Features4(GLCM2,0); ct4(i) = cputime-t;
+    %clear stats4
+    
+end
+
+% Error analysis
+diff_err12 = diffStructFields(stats1, stats2, noffs);
+diff_err13 = diffStructFields(stats1, stats3, noffs);
+diff_err14 = diffStructFields(stats1, stats4, noffs);
+
+% Timing Plots
+figure; subplot(2,1,1);
+            hold on
+            plot(t1,'-*');
+            plot(t2,':sr');
+            %plot(t3,'-x');
+            %plot(t4,':dr');
+            xlabel('No. of GLCMs input');
+            ylabel('Execution time (secs)');
+            legend('GLCM\_Features1','GLCM\_Features2');
+            hold off
+       subplot(2,1,2);
+            hold on
+            plot(ct1,'-*');
+            plot(ct2,':sr');
+            %plot(ct3,'-x');
+            %plot(ct4,':dr');
+            xlabel('No. of GLCMs input');
+            ylabel('CPU time (secs)');   
+            legend('GLCM\_Features1','GLCM\_Features2');
+            hold off  
+            
+figure; subplot(2,1,1);
+            hold on
+            %plot(t1,'-*');
+            %plot(t2,':sr');
+            plot(t3,'-x');
+            plot(t4,':dr');
+            xlabel('No. of GLCMs input');
+            ylabel('Execution time (secs)');
+            legend('GLCM\_Features3','GLCM\_Features4');
+            hold off
+       subplot(2,1,2);
+            hold on
+            %plot(ct1,'-*');
+            %plot(ct2,':sr');
+            plot(ct3,'-x');
+            plot(ct4,':dr');
+            xlabel('No. of GLCMs input');
+            ylabel('CPU time (secs)');   
+            legend('GLCM\_Features3','GLCM\_Features4');
+            hold off 
+
+
+##### SOURCE END #####
+-->
+   </body>
+</html>
