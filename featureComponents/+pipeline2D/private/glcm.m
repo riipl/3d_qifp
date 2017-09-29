@@ -1,0 +1,86 @@
+function [output_labels, output_values] = glcm(image, distance)
+%GLCM Summary of this function goes here
+    offsets = [0,1;
+               -1,1;
+               -1,0;
+               -1,-1];
+
+    offset = offsets .* distance;
+    glcm_m = graycomatrix(uint16(image),'Offset',offset,'GrayLimits',[]);
+    z = GLCM_Features4(glcm_m,0);
+
+original_labels = {
+    'Autocorrelation';
+    'Contrast';
+    'Correlation-matlab';
+    'Correlation: [1,2]';
+    'Cluster Prominence';
+    'Cluster Shade';
+    'Dissimilarity';
+    'Energy-matlab';
+    'Entropy';
+    'Homogeneity-matlab';
+    'Homogeneity';
+    'Maximum probability';
+    'Sum of squares-Variance';
+    'Sum average';
+    'Sum variance';
+    'Sum entropy';
+    'Difference variance';
+    'Difference entropy';
+    'Information measure of correlation1';
+    'Information measure of correlation2';
+    'Inverse difference normalized (INN)';
+    'Inverse difference moment normalized'
+    };
+
+% mean
+mean_labels = cell(size(original_labels));
+for iLabels = 1:size(original_labels,1)
+    prefix = 'mean-';
+    postfix = ['-distance_', num2str(distance)];
+    mean_labels{iLabels} = [prefix, original_labels{iLabels}, postfix];  
+end
+mean_values = structfun(@(x) mean(x(~isnan(x))), z, 'Uniform', 1);
+
+
+%std
+std_labels = cell(size(original_labels));
+for iLabels = 1:size(original_labels,1)
+    prefix = 'std-';
+    postfix = ['-distance_', num2str(distance)];
+    std_labels{iLabels} = [prefix, original_labels{iLabels}, postfix];  
+end
+std_values = structfun(@(x) std(x(~isnan(x))), z, 'Uniform', 1);
+
+%min
+min_labels = cell(size(original_labels));
+for iLabels = 1:size(original_labels,1)
+    prefix = 'min-';
+    postfix = ['-distance_', num2str(distance)];
+    min_labels{iLabels} = [prefix, original_labels{iLabels}, postfix];  
+end
+try
+   min_values = structfun(@(x) min(x(~isnan(x))), z, 'Uniform', 1);
+catch
+   min_values = NaN(numel(original_labels),1);
+end
+
+%max
+max_labels = cell(size(original_labels));
+for iLabels = 1:size(original_labels,1)
+    prefix = 'max-';
+    postfix = ['-distance_', num2str(distance)];
+    max_labels{iLabels} = [prefix, original_labels{iLabels}, postfix];  
+end
+try
+    max_values = structfun(@(x) max(x(~isnan(x))), z, 'Uniform', 1);
+catch
+    max_values = NaN(numel(original_labels),1);
+end
+
+output_labels = [mean_labels; std_labels; min_labels; max_labels];  
+output_values = [mean_values; std_values; min_values; max_values]; 
+
+end
+

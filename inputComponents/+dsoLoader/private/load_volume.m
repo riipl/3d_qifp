@@ -89,17 +89,37 @@ for row=1:2
 end
 zVector =cross(dc(1,:), dc(2,:));
 
+% Also save instance numbers and acquisition times for helping with loading
+% later on.
+dicomAcquisitionTimes = double.empty(numSlicesDSO, 0);
+dicomInstanceNumbers = double.empty(numSlicesDSO, 0);
+
 for nSDSO = 1:numSlicesDSO
-%     tmpSDSO  = dicomSegmentationObjectInfo. ...
-%         SharedFunctionalGroupsSequence.Item_1. ...
-%         DerivationImageSequence.Item_1.SourceImageSequence. ...
-%         (['Item_' num2str(nSDSO)]).ReferencedSOPInstanceUID;
     tmpSDSO = dicomSegmentationObjectInfo. ...
         ReferencedSeriesSequence.Item_1.ReferencedInstanceSequence. ...
         (['Item_' num2str(nSDSO)]).ReferencedSOPInstanceUID;
 
     tmpDicomImageInfo2 = dicominfo(dcmImageFileArray(tmpSDSO));
     zResolutions(nSDSO) = zVector * tmpDicomImageInfo2.ImagePositionPatient;
+    
+    % If acquisitionTime exists:
+    if (isfield(tmpDicomImageInfo2, 'AcquisitionTime'))
+        acquisitionTime = tmpDicomImageInfo2.AcquisitionTime;
+        % And is not unknown
+        if (~(strcmp(acquisitionTime, 'unknown') || isempty(acquisitionTime)))
+            dicomAcquisitionTimes(nSDSO) = int32(str2double(acquisitionTime));
+        end
+    end
+    
+    % If instance number exists:
+    if (isfield(tmpDicomImageInfo2, 'InstanceNumber'))
+        instanceNumber = tmpDicomImageInfo2.InstanceNumber;
+        % And is not unknown
+        if (~(strcmp(instanceNumber, 'unknown') || isempty(instanceNumber)))
+            dicomInstanceNumbers(nSDSO) = int32(str2double(instanceNumber));
+        end
+    end    
+    
     if ((nSDSO > 1) && (zResolutions(nSDSO) == zResolutions(nSDSO-1)))
         continue
     end
@@ -124,20 +144,63 @@ end
 locationsAvailable = ... 
     DcmImageFileSeriesLocationsAvailable(dicomImageInfo.SeriesInstanceUID);
 
+directedZLocationsAvailable = [locationsAvailable.directedZ];
+
 % Find all locations that need to be loaded
 minLocation = min(zResolutions);
 maxLocation = max(zResolutions);
 inbetweenLocationsMask = ...
-    (locationsAvailable >= minLocation) & ...
-    (locationsAvailable <= maxLocation);
-inbetweenLocations = sort(locationsAvailable(inbetweenLocationsMask));
-missingSlices = setdiff(inbetweenLocations, nonSortedzResolutions);
+    (directedZLocationsAvailable >= minLocation) & ...
+    (directedZLocationsAvailable <= maxLocation);
+
+unsortedInbetweenDirectedZLocations =  ...
+                      directedZLocationsAvailable(inbetweenLocationsMask);
+unsortedInbetweenLocations = locationsAvailable(inbetweenLocationsMask);
+
+[inbetweenDirectedZLocations, inbetweenDirectedZLocationsIndex] = ...
+        sort(unsortedInbetweenDirectedZLocations);
+
+inbetweenLocations = ...
+    unsortedInbetweenLocations(inbetweenDirectedZLocationsIndex);
+
+[missingSlices, missingSlicesIndex]  = ...
+    setdiff(inbetweenDirectedZLocations, nonSortedzResolutions);
 
 % For all missing slices in the DSO:
 zResolutions = zResolutions(end:-1:1);
 nMissingSlices = numel(missingSlices);
 slicesAdded  = nMissingSlices;
+
+% Sanity checks for inbetween slices
+minAcquisitionTime = min(dicomAcquisitionTimes);
+maxAcquisitionTime = max(dicomAcquisitionTimes);
+minInstanceNumber = min(dicomInstanceNumbers);
+maxInstanceNumber = max(dicomInstanceNumbers);
+
 for iMissingSlice = 1:nMissingSlices
+    % Check if missing slice location is for the correct phase.
+    missingSliceInfo = ...
+        inbetweenLocations(missingSlicesIndex(iMissingSlice));
+    % Check if Acquisition Time is available.
+    if (isfield(missingSliceInfo, 'acquisitionTime'))
+        if ((str2double(missingSliceInfo.acquisitionTime) < minAcquisitionTime) || ...
+                str2double(missingSliceInfo.acquisitionTime) > maxAcquisitionTime )
+            disp('Multiple phases found in the series.');
+            slicesAdded = slicesAdded - 1;
+            continue;
+        end
+    elseif (isfield(missingSliceInfo, 'instanceNumber'))
+        warning('Acquisition time not available in missing slice, using instance number to group phases');
+        if ((int32(str2double(missingSliceInfo.instanceNumber)) < minInstanceNumber) || ...
+                int32(str2double(missingSliceInfo.instanceNumber)) > maxInstanceNumber )
+            disp('Multiple phases found in the series.');
+            slicesAdded = slicesAdded - 1;
+            continue;
+        end
+    else
+        warning('Couldn''t find acquisition time nor instance number in the metadata to separate slices, possible corruption in results');
+    end
+    
     missingSlice = missingSlices(iMissingSlice);
     insertPlace = find(diff((zResolutions - missingSlice) > 0));
     zResolutions = [zResolutions(1:insertPlace); ...
