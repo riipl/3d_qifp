@@ -1,4 +1,4 @@
-function C = getFeatureFromFolder(conf, lesion)
+function C = getFeatureFromFolder(conf, lesion, customConfig)
 % getFeatureFromFolder()
 %
 % Input:
@@ -39,7 +39,7 @@ config_profile = get_config_profile(lesion.ORGAN);
 
     lesion.NormalizationFactor = 1;
 
-    [res,lesion] = getFeatureFromDCM_AIM(I, info, lesion.dicomFileName, '', 0, lesion, '', config_profile);
+    [res,lesion] = getFeatureFromDCM_AIM(I, info, lesion.dicomFileName, '', 0, lesion, '', config_profile, customConfig);
     features = res.features;
     featureList = res.featureList;
 

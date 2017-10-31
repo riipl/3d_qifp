@@ -1,12 +1,38 @@
-function [output_labels, output_values] = glcm(image, distance)
+function [output_labels, output_values] = glcm(image, distance, customConfig)
 %GLCM Summary of this function goes here
     offsets = [0,1;
                -1,1;
                -1,0;
                -1,-1];
-
     offset = offsets .* distance;
-    glcm_m = graycomatrix(uint16(image),'Offset',offset,'GrayLimits',[]);
+    
+    if (isfield(customConfig, 'glcmMinAndMaxIntensity') && ...
+            ~isempty(customConfig.glcmMinAndMaxIntensity))
+        grayLimitsStr = strsplit(customConfig.glcmMinAndMaxIntensity, ',');
+        grayLimits = cellfun(@str2num, grayLimitsStr);
+    else
+        grayLimits = [];
+    end
+    
+    if (isfield(customConfig, 'glcmNumLevels') && ...
+            ~isempty(customConfig.glcmNumLevels))
+        glcmNumLevels = customConfig.glcmNumLevels;
+    else
+        glcmNumLevels = 8;
+    end
+    
+    
+    if (isfield(customConfig, 'glcmSymmetric') && ...
+            ~isempty(customConfig.glcmSymmetric))
+        glcmSymmetric = customConfig.glcmSymmetric;
+    else
+        glcmSymmetric = false;
+    end
+    
+    glcm_m = graycomatrix(uint16(image),'Offset',offset, ...
+        'GrayLimits',grayLimits, 'NumLevels', glcmNumLevels, ...
+        'Symmetric', glcmSymmetric);
+    
     z = GLCM_Features4(glcm_m,0);
 
 original_labels = {

@@ -1,4 +1,4 @@
-function [res, lesion] = getFeatureFromDCM_AIM(IMAGE, INFO, DCM_FILENAME, AIM_FILENAME, SHOW_LESION, lesion, ORGAN, config_profile)
+function [res, lesion] = getFeatureFromDCM_AIM(IMAGE, INFO, DCM_FILENAME, AIM_FILENAME, SHOW_LESION, lesion, ORGAN, config_profile, customConfig)
 
 % This script will extract image features from the DICOM and AIM file,
 % optionally given the lesion and ORGAN type.
@@ -36,7 +36,7 @@ fprintf('Dicom File : %s\n', lesion.dicomFileName);
 
 % get Features
 % ORGAN specific issues are handled inside getImageFeature.m
-[res2, startPos, featureGroupList, featureList] = getImageFeature(lesion, 0, GROUP_FV, config_profile);
+[res2, startPos, featureGroupList, featureList] = getImageFeature(lesion, 0, GROUP_FV, config_profile, customConfig);
 
 res.features = res2;
 res.startPos = startPos;

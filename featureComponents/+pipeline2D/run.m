@@ -8,6 +8,10 @@ function [ out ] = run( inputs )
 
     intensityVOI = inputs.intensityVOI;
     intensityInfo = inputs.infoVOI;
+    customConfig = struct('glcmMinAndMaxIntensity', inputs.glcmMinAndMaxIntensity, ...
+        'glcmNumLevels', inputs.glcmNumLevels, ...
+        'glcmSymmetric', inputs.glcmSymmetric);
+
     segmentationVOI = inputs.segmentationVOI;
     
     % Create lesion template structure for configuration
@@ -52,7 +56,7 @@ function [ out ] = run( inputs )
             end
             segmentationSlice(L.PixelIdxList{tti}) = 0;
         end
-            
+    
     %% Set image and dicom metadata
     conf.dicomImage = intensitySlice;
     conf.dicomInfo = intensitySliceInfo;
@@ -61,7 +65,7 @@ function [ out ] = run( inputs )
     lesion.SOPInstanceUID = intensitySliceInfo.SOPInstanceUID;
     lesion = maskToPoints(segmentationSlice, lesion);
     
-    features2D = getFeatureFromFolder(conf, lesion);
+    features2D = getFeatureFromFolder(conf, lesion, customConfig);
     
     %% Return intensity values
 %     out.output = { ... 

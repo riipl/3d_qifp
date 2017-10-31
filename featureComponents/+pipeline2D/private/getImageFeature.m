@@ -1,4 +1,4 @@
-function [res, startPos, featureGroupList, featureList] = getImageFeature(lesion, RELOAD_IM_FROM_DICOM, GROUP_FV, config_profile)
+function [res, startPos, featureGroupList, featureList] = getImageFeature(lesion, RELOAD_IM_FROM_DICOM, GROUP_FV, config_profile, customConfig)
 %
 % Return Value:
 %   res                 : Nx1 feature vector (all FV concatenated together)
@@ -316,7 +316,7 @@ gl_rect = s_find_biggest_rect(gl_tmp_lesion);
 gl_tmp_lesion.cropped = imcrop(gl_tmp_lesion.img, gl_rect);
 
 %Distance 2
-[gl_val, gl_tmp] = glcm(gl_tmp_lesion.cropped, 2);
+[gl_val, gl_tmp] = glcm(gl_tmp_lesion.cropped, 2, customConfig);
 tmp = gl_tmp';
 fv_name = gl_val'; 
 if GROUP_FV
@@ -329,7 +329,7 @@ end
 [~,~,featureList] = AppendFeatureList(tmp', fv_name, res, startPos, featureList);
 
 %Distance 3
-[gl_val, gl_tmp] = glcm(gl_tmp_lesion.cropped, 3);
+[gl_val, gl_tmp] = glcm(gl_tmp_lesion.cropped, 3, customConfig);
 tmp = gl_tmp';
 fv_name = gl_val'; 
 if GROUP_FV
@@ -342,7 +342,7 @@ end
 [~,~,featureList] = AppendFeatureList(tmp', fv_name, res, startPos, featureList);
 
 %Distance 5
-[gl_val, gl_tmp] = glcm(gl_tmp_lesion.cropped, 5);
+[gl_val, gl_tmp] = glcm(gl_tmp_lesion.cropped, 5, customConfig);
 tmp = gl_tmp';
 fv_name = gl_val'; 
 if GROUP_FV
