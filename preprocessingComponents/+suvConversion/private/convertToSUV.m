@@ -49,7 +49,7 @@ if units == 'BQML'
     
 elseif units == 'CNTS'      % Phillips scanner, SUV conversion factor is in private tag (7053,1000)
     try
-        SUVFactor = infoVOI{1, 1}.Private_7053_1000;
+        SUVFactor = infoVOI{1, 1}.SUVFactor;
         petSUVIntensityVOI = intensityVOI.*SUVFactor;
            
         % Change units in infoVOI to indicate they have been changed to SUV
