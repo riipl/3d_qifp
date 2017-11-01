@@ -39,7 +39,7 @@ function [ out ] = run( inputs )
         [segmentationSlice, intensitySlice, intensitySliceInfo] ...
             = selectMiddleSlice(segmentationVOI, intensityVOI, intensityInfo);
         middleSliceFeatures = find2DFeatures(segmentationSlice, ...
-            intensitySlice, intensitySliceInfo, lesion);
+            intensitySlice, intensitySliceInfo, lesion, customConfig);
     end
     
     %% Largest Slice
@@ -48,7 +48,7 @@ function [ out ] = run( inputs )
         [segmentationSlice, intensitySlice, intensitySliceInfo] ...
             = selectLargestSlice(segmentationVOI, intensityVOI, intensityInfo);
         largestSliceFeatures = find2DFeatures(segmentationSlice, ...
-            intensitySlice, intensitySliceInfo, lesion);
+            intensitySlice, intensitySliceInfo, lesion, customConfig);
     end
     
     %% Return intensity values
@@ -64,7 +64,7 @@ end
 
 %% Find 2D features from a slice
 function features2D = find2DFeatures(segmentationSlice, intensitySlice, ...
-    intensitySliceInfo, lesion)
+    intensitySliceInfo, lesion, customConfig)
     % If there are multiple disjoint segmentations keep the largest one:
         L = bwconncomp(segmentationSlice, 8);
         vsize = zeros(size(L.PixelIdxList));
@@ -117,7 +117,7 @@ function [segmentationSlice, intensitySlice, intensitySliceInfo] ...
     intensityInfo = intensityInfo(slicesWithData);
     
     % Select middle slice
-    middleSlice = floor(size(squeeze(segmentationVOI),3) / 2);
+    middleSlice = ceil(size(squeeze(segmentationVOI),3) / 2);
     segmentationSlice = logical(segmentationVOI(:,:,middleSlice));
     intensitySlice = intensityVOI(:,:, middleSlice);
     intensitySliceInfo = intensityInfo{middleSlice};

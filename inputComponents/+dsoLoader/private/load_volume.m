@@ -65,7 +65,7 @@ dicomSegmentationObjectInfo = dicominfo(dicomSegmentationObjectFile);
 %     ReferencedSOPInstanceUID;
 dicomImageSopInstanceUid = dicomSegmentationObjectInfo. ...
     ReferencedSeriesSequence.Item_1.ReferencedInstanceSequence. ...
-    (['Item_' num2str(2)]).ReferencedSOPInstanceUID;
+    (['Item_' num2str(1)]).ReferencedSOPInstanceUID;
 
 
 % Metadata of the original image
@@ -133,8 +133,11 @@ yDicomSegmentationResolution = dicomImageInfo.PixelSpacing(1);
 xDicomSegmentationResolution = dicomImageInfo.PixelSpacing(2);
 
 % Z voxel spacing determined by the minimum distance between slices
-zDicomSegmentationResolution = min(abs(diff(zResolutions)));
-
+if (numel(zResolutions) > 2)
+    zDicomSegmentationResolution = min(abs(diff(zResolutions)));
+else
+    zDicomSegmentationResolution = dicomImageInfo.SpacingBetweenSlices;
+end
 % Ugly hack to see if the DSO slices are within 10% of the mean distance
 if any(((diff(zResolutions) - mean(diff(zResolutions)))/mean(diff(zResolutions))) > 0.1)
     warning('DSO has non-contiguous slices');
