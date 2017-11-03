@@ -133,7 +133,7 @@ yDicomSegmentationResolution = dicomImageInfo.PixelSpacing(1);
 xDicomSegmentationResolution = dicomImageInfo.PixelSpacing(2);
 
 % Z voxel spacing determined by the minimum distance between slices
-if (numel(zResolutions) > 2)
+if (numel(zResolutions) > 1)
     zDicomSegmentationResolution = min(abs(diff(zResolutions)));
 else
     zDicomSegmentationResolution = dicomImageInfo.SpacingBetweenSlices;
