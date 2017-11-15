@@ -23,10 +23,10 @@ logger('INFO', ['Calling feature component ' featureComponent]);
 % Run the function
 try
     featureOutput = featureFunction(preparedFeatureConfig);
-catch
+catch e 
     featureOutput = struct();
     featureOutput.output = [];
-    featureOutput.featureRootName = [];
+    featureOutput.featureRootName = preparedFeatureConfig.featureRootName;
     logger('ERROR', ['Was not able to run feature component: ' featureComponent]);
 end
 % Save it to the running cache
