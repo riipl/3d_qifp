@@ -81,7 +81,11 @@ pp = 1;
         tmpPatientName = 'BLANK_NAME';
     end
     C{1, pp+1} = tmpPatientName;   % second row: patient name (from DICOM)
-    C{2, pp+1} = tmpDicomInfo.SliceLocation;        % ninth row, the location of the slice
+    if isfield(tmpDicomInfo, 'SliceLocation')
+        C{2, pp+1} = tmpDicomInfo.SliceLocation;     % ninth row, the location of the slice
+    else
+        C{2, pp+1} = '';   % empty if it doesn't exist
+    end
     C{3, pp+1} = tmpDicomInfo.InstanceNumber;      % Slice number
     C{4, pp+1} = tmpDicomInfo.SliceThickness;      % The thickness of the slice
     C{5, pp+1} = tmpDicomInfo.SeriesInstanceUID;   % Dicom Series UID
