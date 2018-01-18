@@ -21,8 +21,14 @@ featureFunction = str2func([featureComponent '.' ...
 
 logger('INFO', ['Calling feature component ' featureComponent]);
 % Run the function
-featureOutput = featureFunction(preparedFeatureConfig);
-
+try
+    featureOutput = featureFunction(preparedFeatureConfig);
+catch e 
+    featureOutput = struct();
+    featureOutput.output = [];
+    featureOutput.featureRootName = preparedFeatureConfig.featureRootName;
+    logger('ERROR', ['Was not able to run feature component: ' featureComponent]);
+end
 % Save it to the running cache
 featureResults = featureOutput.output;
 featureComponentName= featureComponent;

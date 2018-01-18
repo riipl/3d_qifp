@@ -8,6 +8,10 @@ function [ out ] = run( inputs )
 
     intensityVOI = inputs.intensityVOI;
     intensityInfo = inputs.infoVOI;
+    customConfig = struct('glcmMinAndMaxIntensity', inputs.glcmMinAndMaxIntensity, ...
+        'glcmNumLevels', inputs.glcmNumLevels, ...
+        'glcmSymmetric', inputs.glcmSymmetric);
+
     segmentationVOI = inputs.segmentationVOI;
     
     % Create lesion template structure for configuration
@@ -29,12 +33,39 @@ function [ out ] = run( inputs )
     
     %% Choose which slices to send to the 2D Pipeline
     
-    % Middle Slice 
-    [segmentationSlice, intensitySlice, intensitySliceInfo] ...
-        = selectMiddleSlice(segmentationVOI, intensityVOI, intensityInfo);
-
+    %% Middle Slice 
+    middleSliceFeatures = {};
+    if inputs.middleSlice
+        [segmentationSlice, intensitySlice, intensitySliceInfo] ...
+            = selectMiddleSlice(segmentationVOI, intensityVOI, intensityInfo);
+        middleSliceFeatures = find2DFeatures(segmentationSlice, ...
+            intensitySlice, intensitySliceInfo, lesion, customConfig);
+    end
     
-   %% If there are multiple disjoint segmentations keep the largest one:
+    %% Largest Slice
+    largestSliceFeatures = {};
+    if inputs.largestSlice
+        [segmentationSlice, intensitySlice, intensitySliceInfo] ...
+            = selectLargestSlice(segmentationVOI, intensityVOI, intensityInfo);
+        largestSliceFeatures = find2DFeatures(segmentationSlice, ...
+            intensitySlice, intensitySliceInfo, lesion, customConfig);
+    end
+    
+    %% Return intensity values
+    out.output = horzcat( ...
+        convertOutputToStructureArray(middleSliceFeatures, ...
+                                      inputs.middleSliceName, ...
+                                      inputs.separator), ...
+        convertOutputToStructureArray(largestSliceFeatures, ...
+                                      inputs.largestSliceName , ...
+                                      inputs.separator) ...
+        );
+end
+
+%% Find 2D features from a slice
+function features2D = find2DFeatures(segmentationSlice, intensitySlice, ...
+    intensitySliceInfo, lesion, customConfig)
+    % If there are multiple disjoint segmentations keep the largest one:
         L = bwconncomp(segmentationSlice, 8);
         vsize = zeros(size(L.PixelIdxList));
         
@@ -52,25 +83,15 @@ function [ out ] = run( inputs )
             end
             segmentationSlice(L.PixelIdxList{tti}) = 0;
         end
-            
-    %% Set image and dicom metadata
+
+    % Set image and dicom metadata
     conf.dicomImage = intensitySlice;
     conf.dicomInfo = intensitySliceInfo;
     
-    %% Convert DSO mask to control points
+    % Convert DSO mask to control points
     lesion.SOPInstanceUID = intensitySliceInfo.SOPInstanceUID;
     lesion = maskToPoints(segmentationSlice, lesion);
-    
-    features2D = getFeatureFromFolder(conf, lesion);
-    
-    %% Return intensity values
-%     out.output = { ... 
-%         struct(...
-%         'name', 'histogram',...
-%         'value', intensityValues ...
-%         ) ...
-%     };
-    out.output = convertOutputToStructureArray(features2D, 'middleSlice', '.');
+        features2D = getFeatureFromFolder(conf, lesion, customConfig);
 end
 
 %% Convert output to normal structure Array
@@ -85,7 +106,7 @@ function outputArray = convertOutputToStructureArray(output, prefix, separator)
     end
 end
 
-%%
+%% Select Middle Slice
 function [segmentationSlice, intensitySlice, intensitySliceInfo] ...
     = selectMiddleSlice(segmentationVOI, intensityVOI, intensityInfo)
     slicesWithData = logical(squeeze(sum(sum(segmentationVOI(:,:,:),1),2)));
@@ -96,15 +117,48 @@ function [segmentationSlice, intensitySlice, intensitySliceInfo] ...
     intensityInfo = intensityInfo(slicesWithData);
     
     % Select middle slice
-    middleSlice = floor(size(squeeze(segmentationVOI),3) / 2);
+    middleSlice = ceil(size(squeeze(segmentationVOI),3) / 2);
     segmentationSlice = logical(segmentationVOI(:,:,middleSlice));
     intensitySlice = intensityVOI(:,:, middleSlice);
     intensitySliceInfo = intensityInfo{middleSlice};
 end
 
+%% Select Largest Slice
+function [segmentationSlice, intensitySlice, intensitySliceInfo] ...
+    = selectLargestSlice(segmentationVOI, intensityVOI, intensityInfo)
+    slicesWithData = logical(squeeze(sum(sum(segmentationVOI(:,:,:),1),2)));
+    
+    %Ignore padding slices
+    segmentationVOI = segmentationVOI(:,:,slicesWithData);
+    intensityVOI = intensityVOI(:,:,slicesWithData);
+    intensityInfo = intensityInfo(slicesWithData);
+    
+    % Select largest slice
+    numberOfSlices = size(segmentationVOI, 3);
+    maxConnectedVoxelsPerSlice = zeros(numberOfSlices,1);
+    for iSlice = 1:numberOfSlices
+        segmentationSlice = segmentationVOI(:,:, iSlice);
+        L = bwconncomp(segmentationSlice, 8);
+        vsize = zeros(size(L.PixelIdxList));
+        
+        % Find the volume of each region
+        for pil = 1:numel(L.PixelIdxList);
+            vsize(pil) = numel(L.PixelIdxList{pil});
+        end
+        
+        maxConnectedVoxelsPerSlice(iSlice) = max(vsize);
+    end
+    
+    % Select largest slice
+    [~, largestSlice] = max(maxConnectedVoxelsPerSlice);
+    segmentationSlice = logical(segmentationVOI(:,:,largestSlice));
+    intensitySlice = intensityVOI(:,:, largestSlice);
+    intensitySliceInfo = intensityInfo{largestSlice};
+end
+
+
 %% Convert Segmentation Slice into X,Y values
 function lesion = maskToPoints(segmentationSlice, lesion) 
-
     segslice = imfill(segmentationSlice,'holes');
     segline = bwboundaries(segslice, 'noholes');
     segline = segline{1};
