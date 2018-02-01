@@ -156,6 +156,8 @@ function runPipeline(config)
     % Object Parallel
     if strcmp(globalState.parallelMode, 'object')
         logger('INFO', ['Starting the run in Object Parallel Mode']);
+        delete(gcp('nocreate'))
+        parpool('SpmdEnabled',false);
         p = gcp();
         oResults = parallel.FevalFuture;
         for iUid = 1:numUid
