@@ -15,8 +15,10 @@ function runPipeline(config)
     %% Input Stage initialization
     % Create the internal input stage state
     globalState.inputComponentName = config.input.component;
+    
     inputState = combineStructures(globalState, config.input);
-    inputState = combineStructures(inputState, config.(globalState.inputComponentName));
+    inputState = combineStructures(inputState, ...
+        config.(globalState.inputComponentName));
     [inputState, inputConfig, ~] = ...
         inputStageInitialization(inputState, globalState.inputComponentName);
     
@@ -25,6 +27,29 @@ function runPipeline(config)
     
     % Save to a separate variable to save keystrokes:
     uidToProcess = inputState.uidToProcess;
+    
+    % Check if we are supposed to resume a run
+    if (isfield(globalState, 'resume'))
+        if (globalState.resume == 1)
+            % Name of the resume file
+            resumeFileName = fullfile(config.output.outputRoot, '.resume');
+            % Check if the file exists if not create it
+            if(exist(resumeFileName, 'file') == 2)
+                % Load the file, and then remove all uidAlreadyProcessed.
+                logger('INFO', 'Resume file found');
+                logger('WARNING', ...
+                    'Final output components might give incomplete results');
+                resumeStruct = load(resumeFileName, '-mat', 'processedUid');
+                processedUid = resumeStruct.processedUid;
+                logger('INFO', ['Objects already processed ' ...
+                    num2str(numel(processedUid))]);
+                uidToProcess = setdiff(uidToProcess, processedUid, ...
+                    'stable');
+            else
+                processedUid = {};
+            end
+        end
+    end
 
     % Number of cases to be processed
     numUid = numel(uidToProcess);
@@ -173,6 +198,15 @@ function runPipeline(config)
             logger('INFO', ['Received values from queue position ' num2str(oUid)]);
             featureCache{oUid} = localFeatureCache;
             featureConfig{oUid} = localFeatureConfig;
+            %Add the processed case into processedUIDs and save it to the
+            %output directory
+            if (isfield(globalState, 'resume'))
+                if (globalState.resume == 1)
+                    processedUid{end+1} = uidToProcess{oUid};
+                    save(resumeFileName, '-mat', 'processedUid')
+                end
+            end
+
         end
         
     % Sequential    
@@ -182,6 +216,12 @@ function runPipeline(config)
             localUid = uidToProcess{iUid};
             [featureCache{iUid}, featureConfig{iUid}] = processObject(globalState, globalFeatureConfig, ...
                 inputState, globalPreprocessingConfig,  globalOutputState, localUid);
+            if (isfield(globalState, 'resume'))
+                if (globalState.resume == 1)
+                    processedUid{end+1} = localUid;
+                    save(resumeFileName, '-mat', 'processedUid')
+                end
+            end
         end
     end
 
@@ -223,6 +263,14 @@ function runPipeline(config)
         % Call the output function
         outputFunction(preparedOutputConfig);
     end
+    
+    % We finished, lets delete the resume file.
+    if (isfield(globalState, 'resume'))
+        if (globalState.resume == 1)
+            delete(resumeFileName);
+        end
+    end
+    
     logger('INFO', ['Finishing the final output stage']);
     logger('INFO', ['Quantitative Image Feature Engine complete']);
 end
