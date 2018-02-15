@@ -29,16 +29,25 @@ else
     clear tmpLoadVar;
 end
 
+
 % Dicom segmentation Object
 if ~exist(fullfile(dsoFolder,...
         'dicomSegmentationIndex.mat'), 'file') || recomputeHashTable
-    tmpIndexTableArray2 =  ...
-            create_index(dsoFolder);
+    % The stack and the DSO folders are the same so lets not repeat the search. 
+    if (stackFolder == dsoFolder)
         tmpIndexTableArray.DcmSegmentationObjectFileTable = ...
-            tmpIndexTableArray2.DcmSegmentationObjectFileTable;
+            tmpIndexTableArray.DcmSegmentationObjectFileTable;
         tmpIndexTableArray.DcmSegmentationObjectPatientInfoTable = ...
-            tmpIndexTableArray2.DcmSegmentationObjectPatientInfoTable;        
-        clear tmpIndexTableArray2;    
+            tmpIndexTableArray.DcmSegmentationObjectPatientInfoTable;        
+    else
+        tmpIndexTableArray2 =  ...
+                create_index(dsoFolder);
+            tmpIndexTableArray.DcmSegmentationObjectFileTable = ...
+                tmpIndexTableArray2.DcmSegmentationObjectFileTable;
+            tmpIndexTableArray.DcmSegmentationObjectPatientInfoTable = ...
+                tmpIndexTableArray2.DcmSegmentationObjectPatientInfoTable;        
+            clear tmpIndexTableArray2;
+    end
 else
     tmpLoadVar = ...
         load(fullfile(dsoFolder, ...

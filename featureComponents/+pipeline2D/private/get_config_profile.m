@@ -126,6 +126,22 @@ switch type
         % [x0 W S I0], see notes in the header
         config.features.edge.curMin = [35.0    0.05   -8192    config.features.hist.bin_l];
         config.features.edge.curMax = [45.0      30    8192    config.features.hist.bin_h];
+    case 'tcia-phantom'
+        config.name = 'tcia-phantom';
+        
+        config.load_dicom_method = 'nop'; % do nothing
+        
+        config.display.c_low = 0;
+        config.display.c_high = 450; % 16384
+        
+        config.features.hist.bin_l = 0;
+        config.features.hist.bin_h = 450;
+        config.features.hist.F1_THRESH = (config.features.hist.bin_l + config.features.hist.bin_h)/2;
+        config.features.hist.NUM_BINS = 32;
+        
+        % [x0 W S I0], see notes in the header
+        config.features.edge.curMin = [35.0    0.05   -8192    config.features.hist.bin_l];
+        config.features.edge.curMax = [45.0      30    8192    config.features.hist.bin_h];
     otherwise
         config.name = 'null';
 end
