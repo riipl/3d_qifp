@@ -79,20 +79,35 @@ maskedDestPoints = destPoints3DConcat(newWholeMask,:);
 %% Separate windows for each origin point
 
 windowsPoints = zeros(samplePoints, samplePoints, samplePoints, numberOfComputedPoints);
+numberOfPointsInAWindow = size(windowsPoints,1) *  size(windowsPoints,2) * size(windowsPoints,3);
+reOrderedMaskedDestPoints = zeros(numberOfPointsInAWindow*numberOfComputedPoints,3);
 
 for iWindow = 1:numberOfComputedPoints
     % Grab a windowframe
     windowFrame = maskedDestPoints(((numDirections+1)*(iWindow-1)+1):((numDirections+1)*iWindow),:);
     
-    % Find the gray levels of destination pointsd
-    reOrderedMaskedDestPoints = vertcat(windowFrame(1:floor(numDirections/2), :), ...
-        windowFrame(numDirections+1,:), windowFrame((floor(numDirections/2)+1):(end-1), :));
-
+    % Find the gray levels of destination pointsd (It reorders the points
+    % to put the center in the center and adds all the values to one
+    % matrix.
+    reOrderedMaskedDestPoints( ...
+        (((iWindow-1)*numberOfPointsInAWindow)+1)...
+            :(((iWindow)*numberOfPointsInAWindow)),:) = ...
+                vertcat(windowFrame(1:floor(numDirections/2), :), ...
+                    windowFrame(numDirections+1,:), ...
+                    windowFrame((floor(numDirections/2)+1):(end-1), :));
+end
+  
+    % Find interpolation for all points
     destinationValues = interp3(X,Y,Z,intensityVOI,reOrderedMaskedDestPoints(:,2), ...
         reOrderedMaskedDestPoints(:,1), reOrderedMaskedDestPoints(:,3));
 
+    
+for iWindow = 1:numberOfComputedPoints
+    localDestinationValues = ...
+        destinationValues((((iWindow-1)*numberOfPointsInAWindow)+1): ...
+                            (((iWindow)*numberOfPointsInAWindow)));
     % Reshape intensity values to the correct shape
-    windowsPoints(:,:,:,iWindow) = reshape(destinationValues, [samplePoints, ...
+    windowsPoints(:,:,:,iWindow) = reshape(localDestinationValues, [samplePoints, ...
         samplePoints, samplePoints]);
-end
+end 
 end
