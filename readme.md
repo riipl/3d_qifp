@@ -126,3 +126,10 @@ maxAreaImage|windowLevelPreset="ctLung"
 
 ```
 
+## Notes
+### Features not compatible with penumbra only region
+The following feature components require a closed volume, therefore their results are not defined when using penumbra-only segmentation:
+* edgeSigmoidFitting
+* lvii
+* roughness
+* sphericity
