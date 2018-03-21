@@ -178,8 +178,10 @@ function runPipeline(config)
 
 
 %% Managing Framework Processing
+    sequentialUidList = 1:numUid;
     % Object Parallel
     if strcmp(globalState.parallelMode, 'object')
+        sequentialUidList = [];
         logger('INFO', ['Starting the run in Object Parallel Mode']);
         delete(gcp('nocreate'))
         parpool('SpmdEnabled',false);
@@ -193,24 +195,32 @@ function runPipeline(config)
                 globalPreprocessingConfig, globalOutputState, localUid);
         end
         for iUid = 1:numUid
-            [oUid,localFeatureCache, localFeatureConfig] = fetchNext(oResults);
-            disp(oResults(oUid).Diary);
-            logger('INFO', ['Received values from queue position ' num2str(oUid)]);
-            featureCache{oUid} = localFeatureCache;
-            featureConfig{oUid} = localFeatureConfig;
-            %Add the processed case into processedUIDs and save it to the
-            %output directory
-            if (isfield(globalState, 'resume'))
-                if (globalState.resume == 1)
-                    processedUid{end+1} = uidToProcess{oUid};
-                    save(resumeFileName, '-mat', 'processedUid')
+            try
+                [oUid,localFeatureCache, localFeatureConfig] = fetchNext(oResults);
+                disp(oResults(oUid).Diary);
+                logger('INFO', ['Received values from queue position ' num2str(oUid)]);
+                featureCache{oUid} = localFeatureCache;
+                featureConfig{oUid} = localFeatureConfig;
+                %Add the processed case into processedUIDs and save it to the
+                %output directory
+                if (isfield(globalState, 'resume'))
+                    if (globalState.resume == 1)
+                        processedUid{end+1} = uidToProcess{oUid};
+                        save(resumeFileName, '-mat', 'processedUid')
+                    end
                 end
+            catch
+                % Error processing this object. Lets schedule it so it is
+                % run sequentially
+                logger('WARNING', ['Could not process: ', num2str(oUid), ' in parallel adding it to sequential']);
+                sequentialUidList = [sequentialUidList oUid];
+                disp(oResults(oUid).Diary);    
             end
-
         end
-        
-    % Sequential    
-    else
+    end
+    
+    % Sequential
+    if numel(sequentialUidList) > 0
         logger('INFO', ['Starting the run in Sequential Mode']);
         for iUid = 1:numUid
             localUid = uidToProcess{iUid};
@@ -224,7 +234,6 @@ function runPipeline(config)
             end
         end
     end
-
 %% Final Output Stage
     logger('INFO', ['Starting the final output stage']);
     % Run each output component that has final turned on
