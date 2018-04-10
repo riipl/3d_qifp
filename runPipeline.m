@@ -187,18 +187,29 @@ function runPipeline(config)
         parpool('SpmdEnabled',false);
         p = gcp();
         oResults = parallel.FevalFuture;
-        for iUid = 1:numUid
+        
+        % Set maximum queue at one time
+        if ~isfield(globalState, 'maximumQueue')
+            globalState.maximumQueue = numUid;
+        end
+        currentQueued = 0;
+        % Preload the queue
+        for iUid = 1:globalState.maximumQueue
             localUid = uidToProcess{iUid};
-            logger('INFO', ['Queued UID ' localUid ' in position ' num2str(iUid)]);
             oResults(iUid) = parfeval(p, @processObject, 2, ...
                 globalState, globalFeatureConfig, inputState, ...
                 globalPreprocessingConfig, globalOutputState, localUid);
+            currentQueued = currentQueued + 1;
+            logger('INFO', ['Queued UID ' localUid ' in position ' num2str(iUid) ' Total Queued: ' num2str(currentQueued)]);                    
+
         end
+                
         for iUid = 1:numUid
             try
                 [oUid,localFeatureCache, localFeatureConfig] = fetchNext(oResults);
                 disp(oResults(oUid).Diary);
                 logger('INFO', ['Received values from queue position ' num2str(oUid)]);
+                currentQueued = currentQueued - 1;
                 featureCache{oUid} = localFeatureCache;
                 featureConfig{oUid} = localFeatureConfig;
                 %Add the processed case into processedUIDs and save it to the
@@ -209,11 +220,23 @@ function runPipeline(config)
                         save(resumeFileName, '-mat', 'processedUid')
                     end
                 end
-            catch
+                
+                if ((currentQueued < globalState.maximumQueue) && ...
+                    ((iUid + globalState.maximumQueue) <= numUid))
+                    localUid = uidToProcess{iUid + globalState.maximumQueue};
+                    oResults(iUid) = parfeval(p, @processObject, 2, ...
+                        globalState, globalFeatureConfig, inputState, ...
+                        globalPreprocessingConfig, globalOutputState, localUid);
+                    currentQueued = currentQueued + 1;
+                    logger('INFO', ['Queued UID ' localUid ' in position ' num2str(iUid) ' Total Queued: ' num2str(currentQueued)]);                    
+                end
+                 
+            catch e
                 % Error processing this object. Lets schedule it so it is
                 % run sequentially
                 logger('WARNING', ['Could not process: ', num2str(oUid), ' in parallel adding it to sequential']);
                 sequentialUidList = [sequentialUidList oUid];
+                currentQueued = currentQueued - 1;
                 disp(oResults(oUid).Diary);    
             end
         end
