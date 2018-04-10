@@ -230,15 +230,24 @@ function runPipeline(config)
                     currentQueued = currentQueued + 1;
                     logger('INFO', ['Queued UID ' localUid ' in position ' num2str(iUid) ' Total Queued: ' num2str(currentQueued)]);                    
                 end
-                 
             catch e
-                % Error processing this object. Lets schedule it so it is
-                % run sequentially
-                logger('WARNING', ['Could not process: ', num2str(oUid), ' in parallel adding it to sequential']);
-                sequentialUidList = [sequentialUidList oUid];
+                logger('WARNING', ['Could not process an object in parallel adding it to sequential. Message: ' e.cause{1}.message]);
                 currentQueued = currentQueued - 1;
-                disp(oResults(oUid).Diary);    
             end
+        end
+        % Error processing this object. Lets schedule all with error so
+        % they run sequentially 
+        % Ids of all items that are finished but threw errors
+        errorIds = find(strcmp({oResults.State}, 'finished') & (~cellfun(@isempty, {oResults.Error})));
+        if numel(errorIds) > 0
+            logger('INFO', 'The following consoles are from failed parallel processes')
+            logger('INFO: ', '---------------------------------------------------------')
+            for iError = 1:numel(errorIds)
+                logger('INFO', ['Console for UID ' uidToProcess{errorIds(iError)} ':']);
+                disp(oResults(errorIds(iError)).Diary);
+                logger('INFO', '---------------------------------------------------------')
+            end
+            sequentialUidList = errorIds;
         end
     end
     
