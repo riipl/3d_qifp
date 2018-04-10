@@ -231,7 +231,7 @@ function runPipeline(config)
                     logger('INFO', ['Queued UID ' localUid ' in position ' num2str(iUid) ' Total Queued: ' num2str(currentQueued)]);                    
                 end
             catch e
-                logger('WARNING', ['Could not process an object in parallel adding it to sequential. Message: ' e.cause{1}.message]);
+                logger('WARNING', 'Could not process an object in parallel adding it to sequential.');
                 currentQueued = currentQueued - 1;
             end
         end
