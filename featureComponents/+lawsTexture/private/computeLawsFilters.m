@@ -3,6 +3,9 @@ function [windowFilterResponseStruct, uniqueFilter, percentageCovered] = compute
 %COMPUTELAWSFILTERS Summary of this function goes here
 %   Detailed explanation goes here
 
+% Statistics name and functions
+statisticFunctions = statistics();
+nFunctions = numel(statisticFunctions);
 %% Get all kernels for computation
 filters = generateLawsFilters();
 
@@ -18,7 +21,7 @@ nFilters = size(filters,1);
 windowFilterResponse = zeros(nWindows, nFilters);
 filterNames = cell(nFilters,1);
 filterIds = zeros(nFilters,1);
-windowFilterResponseStruct = cell(nFilters,1);
+windowFilterResponseStruct = cell(nFilters*nFunctions,1);
 
 % Extract names and ids from filters
 for iFilter = 1:nFilters
@@ -35,26 +38,49 @@ end
 
 % Format Output
 for iFilter = 1:nFilters
-    windowFilterResponseStruct{iFilter} = struct( ...
-        'value', windowFilterResponse(:,iFilter), ...
-        'name', ['resolution.' num2str(resolution) 'mm.' filterNames{iFilter}] ...
-    );
+    for iFunction = 1:nFunctions
+        statFunction = statisticFunctions{iFunction};
+        statName = statFunction.name;
+        statFunc = statFunction.function;        
+        featureName = ['resolution.' num2str(resolution) 'mm.' filterNames{iFilter}, '.', statName];
+        featureValue = statFunc(windowFilterResponse(:,iFilter));
+        if isnan(featureValue)
+            featureValue = [];
+        end
+        windowFilterResponseStruct{(iFilter-1)*nFunctions + iFunction} = struct( ...
+            'value', featureValue, ...
+            'name', featureName ...
+        );
+    end
 end
 
 % Combine features with same ID
 uniqueIds = unique(filterIds);
 nUniqueIds = numel(uniqueIds);
-uniqueFilter = cell(nUniqueIds,1);
+uniqueFilter = cell(nUniqueIds*nFunctions,1);
 for iUniqueId = 1:nUniqueIds
     cId = uniqueIds(iUniqueId);
     filterMaskId = (filterIds == cId);
     filtersMasked = windowFilterResponse(:,filterMaskId);
     filtersNameMasked = filterNames(filterMaskId);
-    uniqueFilter{iUniqueId} = struct( ...
-        'value', filtersMasked(:), ...
-        'name', ['resolution.' num2str(resolution) 'mm.aggregated.' filtersNameMasked{1}] ...
-    );
+    
+    for iFunction = 1:nFunctions
+        statFunction = statisticFunctions{iFunction};
+        statName = statFunction.name;
+        statFunc = statFunction.function;                
+        featureName = ['resolution.' num2str(resolution) 'mm.aggregated.' filtersNameMasked{1} '.', statName];
+        featureValue = statFunc(filtersMasked(:));
+        if isnan(featureValue)
+            featureValue = [];
+        end
+        uniqueFilter{(iUniqueId-1)*nFunctions + iFunction} = struct( ...
+            'value', featureValue, ...
+            'name', featureName ...
+        );
+    end
 end
+
+
 
 end
 
