@@ -58,6 +58,11 @@ function [featureCache, featureConfig] = processObject(globalState, ...
         nPreprocessingOutputs = numel(preprocessingOutput);
         for iPreprocessingOutput = 1:nPreprocessingOutputs 
             localPreprocessingOutput = preprocessingOutput{iPreprocessingOutput};
+            if (size(localPreprocessingOutput,1) > 1)
+                nLocalPreprocessingOutput.name = localPreprocessingOutput(1).name;
+                nLocalPreprocessingOutput.value = {localPreprocessingOutput.value};
+                localPreprocessingOutput = nLocalPreprocessingOutput;
+            end
             localPreprocessingState.(localPreprocessingOutput.name) = ...
                 localPreprocessingOutput.value;
             localState.(localPreprocessingOutput.name) = ...
@@ -94,7 +99,7 @@ function [featureCache, featureConfig] = processObject(globalState, ...
                 localFeatureRootName, localFeatureConfiguration] = ...
                 fetchNext(fResults);
             logger('INFO', ['Received values from feature in queue position ' num2str(iFeature)]);
-
+            java.lang.System.gc()
             featureResults{cFeature} = localFeatureResults;
             featureComponentName{cFeature} = localFeatureComponentName;
             featureRootName{cFeature} = localFeatureRootName;
