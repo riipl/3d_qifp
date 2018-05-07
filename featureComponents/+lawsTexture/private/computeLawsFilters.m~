@@ -1,0 +1,60 @@
+function [windowFilterResponse, uniqueFilter, percentageCovered] = computeLawsFilters( intensityVOI, ...
+    segmentationVOI, resolution, samplePoints, xSpacing, ySpacing, zSpacing)
+%COMPUTELAWSFILTERS Summary of this function goes here
+%   Detailed explanation goes here
+
+%% Get all kernels for computation
+filters = generateLawsFilters();
+
+%% Get intensity windows to apply kernels on
+spacing = [ySpacing, xSpacing, zSpacing];
+[windows, percentageCovered] = createWindows(intensityVOI, ... 
+    segmentationVOI, resolution, samplePoints, spacing); 
+
+%% Generate Filter Responses
+nWindows = size(windows, 4);
+nFilters = size(filters,1);
+
+windowFilterResponse = zeros(nWindows, nFilters);
+filterNames = cell(nFilters,1);
+filterIds = zeros(nFilters,1);
+
+% Apply filters to all windows
+for iWindow = 1:nWindows
+    window = windows(:,:,:,iWindow);
+    windowFilterResponse(iWindow, :) = applyFiltersToWindow(window, filters);
+end
+
+% Extract names and ids from filters
+for iFilter = 1:nFilters
+    filterNames{iFilter} = filters{iFilter}.name;
+    filterIds(iFilter) = filters{iFilter}.id;
+end
+
+% Combine features with same ID
+uniqueIds = unique(filterIds);
+nUniqueIds = numel(uniqueIds);
+uniqueFilter = cell(nUniqueIds,1);
+for iUniqueIds = 1:nUniqueIds
+    cId = uniqueIds(iUniqueIds);
+    filterMaskId = (filterIds == cId);
+    filtersMasked = windowFilterResponse(:,filterMaskId);
+    filtersNameMasked = filtersNames(filterMaskId);
+    uniqueFilter(iUniqueId) = struct( ...
+        'value', filtersMasked(:), ...
+        'name', ['aggregated.' filtersNameMasked{1}] ...
+    );
+end
+
+end
+
+%% BruteForce Window application
+% Look into paralelizing this
+function response = applyFiltersToWindow(window, filters)
+    nFilters = numel(filters);
+    response = nan(nFilters,1);
+    for iFilter = 1:nFilters
+        mResponse = window .* filters{iFilter}.filter;
+        response(iFilter) = sum(mResponse(:));
+    end
+end

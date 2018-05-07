@@ -11,6 +11,7 @@ segmentationVOI = inputs.segmentationVOI;
 samplePoints = inputs.samplePoints;
 volumeInfo = inputs.infoVOI;
 
+
 %% Calculate pixel voxel sizes
     % Find pixel spacing in millimeters in plane and between planes
     ySpacing = abs(volumeInfo{1}.PixelSpacing(1));

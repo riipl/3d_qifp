@@ -11,14 +11,14 @@ function [featureCache, featureConfig] = processObject(globalState, ...
     %% Input Stage 
     logger('INFO', ['Starting input stage']);
     
-    try
+    %try
         inputData = inputStageLoad(localInputState, globalState.inputComponentName);
-    catch
-        logger('WARN', ['Could not load object with UID ' uidToProcess]);
-        featureCache = {};
-        featureConfig = {};
-        return;
-    end
+    %catch
+    %    logger('WARN', ['Could not load object with UID ' uidToProcess]);
+    %    featureCache = {};
+    %    featureConfig = {};
+    %    return;
+    %end
     
     localState = combineStructures(localState, inputData);
 

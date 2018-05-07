@@ -186,8 +186,8 @@ for iMissingSlice = 1:nMissingSlices
         inbetweenLocations(missingSlicesIndex(iMissingSlice));
     % Check if Acquisition Time is available.
     if (isfield(missingSliceInfo, 'acquisitionTime'))
-        if ((str2double(missingSliceInfo.acquisitionTime) < minAcquisitionTime) || ...
-                str2double(missingSliceInfo.acquisitionTime) > maxAcquisitionTime )
+        if ((round(str2double(missingSliceInfo.acquisitionTime)) < minAcquisitionTime) || ...
+                round(str2double(missingSliceInfo.acquisitionTime)) > maxAcquisitionTime )
             disp('Multiple phases found in the series.');
             slicesAdded = slicesAdded - 1;
             continue;

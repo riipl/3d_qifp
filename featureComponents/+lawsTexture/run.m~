@@ -1,0 +1,50 @@
+function [ out ] = run( inputs )
+
+%RUN Summary of this function goes here
+%   Detailed explanation goes here
+    featureRootName = inputs.featureRootName;
+    out = struct('featureRootName', featureRootName);
+
+%% Initialize
+intensityVOI = inputs.intensityVOI;
+segmentationVOI = inputs.segmentationVOI;
+distance = inputs.distance;
+resolution = inputs.resolution;
+volumeInfo = inputs.infoVOI;
+
+%% Calculate pixel voxel sizes
+    % Find pixel spacing in millimeters in plane and between planes
+    ySpacing = abs(volumeInfo{1}.PixelSpacing(1));
+    xSpacing = abs(volumeInfo{1}.PixelSpacing(2));
+    zSpacing = abs(volumeInfo{1}.zResolution);
+
+
+%% Calculate the law's features for a resolution and distance
+out.output = {};
+  
+        distance = distanceArray(dist);
+        [featureVector, ~] = calculateGLCM (intensityVOI, ...
+            segmentationVOI, ...
+            distance, ...
+            xSpacing,ySpacing, zSpacing, ...
+            grayLevels, ...
+            symmetric, ...
+            minIntensity, ...
+            maxIntensity
+        );
+        %% Create output structure
+        outputFeatureNames = fieldnames(distOutputs);
+        nFeature = numel(outputFeatureNames);
+        for iFeature = 1:nFeature
+            featureName = featureNames{iFeature};
+            out.output = [out.output, ...
+                struct( ...
+                'name', ['distance.' num2str(distanceArray(dist)) 'mm.' featureName], ...
+                'value', distOutputs.(featureName) ...
+                )
+            ]; 
+        end
+    catch
+        out.output = {};
+    end
+end

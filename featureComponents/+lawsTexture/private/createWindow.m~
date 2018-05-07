@@ -1,4 +1,4 @@
-function [windowsPoints, percentageCovered] = createWindows(intensityVOI, segmentationVOI, resolution, ...
+function [windowPoints, percentageCovered] = createWindow(intensityVOI, segmentationVOI, resolution, ...
     samplePoints, spacing)
 
 %% Find origins and convert it to real life coordinates (mm)
@@ -19,14 +19,29 @@ for zPoint = -halfSamplePoints:halfSamplePoints
             if all([zPoint,xPoint,yPoint]==0)
                 continue
             end
-            distanceRow(iDistance) = max(abs([yPoint, xPoint, zPoint]))*resolution;
+            distanceRow(iDistance) = max(abs([yPoint, xPoint, zPoint]));
             direction(iDistance, :) = [yPoint, xPoint, zPoint];
             iDistance = iDistance + 1;
         end
     end
 end
 
-%% Calculate displacement direction and distance
+%%
+% direction =    [ ...
+%                  1,  1,  1;
+%                  1,  0,  1;
+%                  1, -1,  1;
+%                  0,  1,  1;
+%                  0,  0,  1;
+%                  0, -1,  1;
+%                 -1,  1,  1;                 
+%                 -1,  0,  1;
+%                 -1, -1,  1;
+%                  1,  1,  0;
+%                  1,  0,  0;
+%                  1, -1,  0;
+%                  0,  1,  0];
+
 numDirections = size(direction,1);
 % Calculate displacement
 % Introduced on 2017b: vecnorm(displacement, 2, 2)
@@ -44,8 +59,8 @@ destPoints3D = originPoints3D + repmat(displacement3D, ...
 
 % Interpolate mask to see if any destination point is outside the
 % mask
-originalRowLength = (1:size(intensityVOI,1)) * spacing(1);
-originalColLength = (1:size(intensityVOI,2)) * spacing(2);
+originalRowLength = (1:size(intensityVOI,1)) * spacing(2);
+originalColLength = (1:size(intensityVOI,2)) * spacing(1);
 originalDepthLength = (1:size(intensityVOI,3)) * spacing(3);
 [X,Y,Z] = meshgrid(originalColLength, originalRowLength, ...
     originalDepthLength);
@@ -79,35 +94,20 @@ maskedDestPoints = destPoints3DConcat(newWholeMask,:);
 %% Separate windows for each origin point
 
 windowsPoints = zeros(samplePoints, samplePoints, samplePoints, numberOfComputedPoints);
-numberOfPointsInAWindow = size(windowsPoints,1) *  size(windowsPoints,2) * size(windowsPoints,3);
-reOrderedMaskedDestPoints = zeros(numberOfPointsInAWindow*numberOfComputedPoints,3);
 
 for iWindow = 1:numberOfComputedPoints
     % Grab a windowframe
-    windowFrame = maskedDestPoints(((numDirections+1)*(iWindow-1)+1):((numDirections+1)*iWindow),:);
+    windowFrame = maskedDestPoints((numDirections*(iWindow-1)+1):(numDirections*iWindow+1),:);
     
-    % Find the gray levels of destination pointsd (It reorders the points
-    % to put the center in the center and adds all the values to one
-    % matrix.
-    reOrderedMaskedDestPoints( ...
-        (((iWindow-1)*numberOfPointsInAWindow)+1)...
-            :(((iWindow)*numberOfPointsInAWindow)),:) = ...
-                vertcat(windowFrame(1:floor(numDirections/2), :), ...
-                    windowFrame(numDirections+1,:), ...
-                    windowFrame((floor(numDirections/2)+1):(end-1), :));
-end
-  
-    % Find interpolation for all points
+    % Find the gray levels of destination pointsd
+    reOrderedMaskedDestPoints = vertcat(windowFrame(1:floor(numDirections/2), :), ...
+        windowFrame(numDirections+1,:), windowFrame((floor(numDirections/2)+1):(end-1), :));
+
     destinationValues = interp3(X,Y,Z,intensityVOI,reOrderedMaskedDestPoints(:,2), ...
         reOrderedMaskedDestPoints(:,1), reOrderedMaskedDestPoints(:,3));
 
-    
-for iWindow = 1:numberOfComputedPoints
-    localDestinationValues = ...
-        destinationValues((((iWindow-1)*numberOfPointsInAWindow)+1): ...
-                            (((iWindow)*numberOfPointsInAWindow)));
     % Reshape intensity values to the correct shape
-    windowsPoints(:,:,:,iWindow) = reshape(localDestinationValues, [samplePoints, ...
+    windowsPoints(:,:,:,iWindow) = reshape(destinationValues, [samplePoints, ...
         samplePoints, samplePoints]);
-end 
+end
 end
