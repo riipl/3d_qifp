@@ -134,3 +134,4 @@ The following feature components require a closed volume, therefore their result
 * roughness
 * sphericity
 
+
