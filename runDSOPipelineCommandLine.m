@@ -1,4 +1,4 @@
-function runDSOPipelineCommandLine( dsoDirPath,...
+ function runDSOPipelineCommandLine( dsoDirPath,...
     outputDirPath, configFilePath, qifpFormat)
 %RUNPIPELINECOMMANDLINE Summary of this function goes here
 %   Detailed explanation goes here
@@ -42,12 +42,23 @@ dicomSeriesDirPath = dsoDirPath;
     logger('INFO', ['Setting Dicom Series Folder: ' dicomSeriesDirPath]);
     logger('INFO', ['Setting DSO Folder: ' dicomSeriesDirPath]);
 
-    %Change output
+    % Change output
     if ~isfield(config, 'output')
         config.output = struct();
     end
 
     config.output.outputRoot = outputDirPath;
+
+    % Set QIFE version for the run.
+    qifeVersion;
+    config.versionQIFE = struct();
+    config.versionQIFE.gitBranch = gitBranch;
+    config.versionQIFE.gitHash = gitHash;
+    config.versionQIFE.dockerTag = dockerTag;
+    config.versionQIFE.buildDate = buildDate;
+    config.versionQIFE.runDate = runDate;
+    config.featureComputation.components = ...
+        [config.featureComputation.components ',versionQIFE'];
 
     runPipeline(config)
 
