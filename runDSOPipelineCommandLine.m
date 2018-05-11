@@ -50,13 +50,7 @@ dicomSeriesDirPath = dsoDirPath;
     config.output.outputRoot = outputDirPath;
 
     % Set QIFE version for the run.
-    qifeVersion;
-    config.versionQIFE = struct();
-    config.versionQIFE.gitBranch = gitBranch;
-    config.versionQIFE.gitHash = gitHash;
-    config.versionQIFE.dockerTag = dockerTag;
-    config.versionQIFE.buildDate = buildDate;
-    config.versionQIFE.runDate = runDate;
+    config.versionQIFE = qifeVersion();
     config.featureComputation.components = ...
         [config.featureComputation.components ',versionQIFE'];
 
