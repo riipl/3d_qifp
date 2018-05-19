@@ -39,7 +39,7 @@ original_labels = {
     'Autocorrelation';
     'Contrast';
     'Correlation-matlab';
-    'Correlation: [1,2]';
+    'Correlation: [1-2]';
     'Cluster Prominence';
     'Cluster Shade';
     'Dissimilarity';
