@@ -5,7 +5,7 @@ function output( inputs )
     %% Initialization 
     segVOI = inputs.segmentationVOI;
     segInfo = inputs.segmentationInfo;
-
+   
     
     %% Prepare segmentation for output
     origY = segInfo.segmentationOrigin(1);
@@ -52,6 +52,8 @@ function output( inputs )
     end
     segInfo.SeriesDescription = seriesDescription;
     
+    % New series UID to avoid clashes in epad
+    segInfo.SeriesInstanceUID = dicomuid;
     %% Save the image to disk
     outputRoot = inputs.outputRoot;
     outputFolder = inputs.outputFolder;
