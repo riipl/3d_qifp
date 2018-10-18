@@ -119,16 +119,20 @@ fileDcmArray = {};
                     disp([dicomFileInfo.SeriesInstanceUID '-' num2str(dicomFileInfo.InstanceNumber)]);
 
                     % Find Z vector
-                    imageOrientation = dicomFileInfo.ImageOrientationPatient;
-                    dc = zeros(2,3);
-                    for row=1:2
-                        for col=1:3
-                            dc(row,col) = imageOrientation((row-1)*3+col);
+                    if dicomFileInfo.Modality == 'MG'
+                        directedZ = 1;
+                    else
+                        imageOrientation = dicomFileInfo.ImageOrientationPatient;
+                        dc = zeros(2,3);
+                        for row=1:2
+                            for col=1:3
+                                dc(row,col) = imageOrientation((row-1)*3+col);
+                            end
                         end
+                        zVector =cross(dc(1,:), dc(2,:));
+                        directedZ = zVector * dicomFileInfo.ImagePositionPatient;
                     end
-                    zVector =cross(dc(1,:), dc(2,:));
-                    directedZ = zVector * dicomFileInfo.ImagePositionPatient;
-
+                    
                     % Store series and patient location
                     indexTableArray.DcmImageFileSeriesLocation( ...
                         [dicomFileInfo.SeriesInstanceUID '-' ...

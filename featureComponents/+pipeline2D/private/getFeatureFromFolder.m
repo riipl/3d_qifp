@@ -34,7 +34,13 @@ config_profile = get_config_profile(lesion.ORGAN);
     I = conf.dicomImage;    
     
     lesion.dicomFileName = info.Filename;
-    if ~isfield(info, 'PixelSpacing'), info.PixelSpacing(1)=1; end
+    
+    if isfield(info, 'ImagerPixelSpacing') 
+        info.PixelSpacing(1)=info.ImagerPixelSpacing(1); 
+    elseif ~isfield(info, 'PixelSpacing') 
+        info.PixelSpacing(1)=1; 
+    end
+    
     lesion.PixelSpacing = info.PixelSpacing(1);
 
     lesion.NormalizationFactor = 1;
@@ -87,7 +93,11 @@ pp = 1;
         C{2, pp+1} = '';   % empty if it doesn't exist
     end
     C{3, pp+1} = tmpDicomInfo.InstanceNumber;      % Slice number
-    C{4, pp+1} = tmpDicomInfo.SliceThickness;      % The thickness of the slice
+    if isfield(tmpDicomInfo, 'SliceThickness')
+        C{4, pp+1} = tmpDicomInfo.SliceThickness;      % The thickness of the slice
+    else
+        C{4, pp+1} = '';   % empty if it doesn't exist
+    end
     C{5, pp+1} = tmpDicomInfo.SeriesInstanceUID;   % Dicom Series UID
     C{6, pp+1} = tmpDicomInfo.StudyInstanceUID;    % Dicom Study UID
     C{7, pp+1} = tmpDicomInfo.SOPInstanceUID;      % Dicom ID
