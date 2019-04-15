@@ -7,15 +7,21 @@ function [ out ] = run( inputs )
     operation = inputs.operation;
     distance = inputs.distance;
     
-    %% Calculate pixel voxel sizes
-    % Find pixel spacing in millimeters in plane and between planes
-    ySpacing = abs(infoVOI{1}.PixelSpacing(1));
-    xSpacing = abs(infoVOI{1}.PixelSpacing(2));
-    zSpacing = abs(infoVOI{2}.ImagePositionPatient(3) - infoVOI{1}.ImagePositionPatient(3));
+    %% Calculate voxel sizes and create new segmentation
+    % Find voxel spacing in millimeters the create new peri-tumoral segmentation
+    if infoVOI{1, 1}.Modality == 'MG'   % If mammogram, create a 2D peri-tumoral region
+        ySpacing = abs(infoVOI{1, 1}.ImagerPixelSpacing(1));
+        xSpacing = abs(infoVOI{1, 1}.ImagerPixelSpacing(2));
+        
+        newVOI = createPeriTumoralRegion2D(segmentationVOI, operation, distance, xSpacing, ySpacing);
+    else
+        ySpacing = abs(infoVOI{1}.PixelSpacing(1));
+        xSpacing = abs(infoVOI{1}.PixelSpacing(2));
+        zSpacing = abs(infoVOI{2}.ImagePositionPatient(3) - infoVOI{1}.ImagePositionPatient(3));
+        
+        newVOI = createPeriTumoralRegion3D(segmentationVOI, operation, distance, xSpacing, ySpacing, zSpacing);
+    end
     
-    %% Calculate New Segmentation
-    newVOI = createPeriTumoralRegion(segmentationVOI, operation, distance, xSpacing, ySpacing, zSpacing);
-      
     %% Return New Segmentation
     out = { ... 
         struct(...
