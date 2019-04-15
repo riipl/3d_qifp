@@ -1,4 +1,4 @@
-function [ periTumoralVOI ] = createPeriTumoralRegion(segmentationVOI, operation, distance, xSpacing, ySpacing, zSpacing)
+function [ periTumoralVOI ] = createPeriTumoralRegion3D(segmentationVOI, operation, distance, xSpacing, ySpacing, zSpacing)
 % CREATEPERITUMORALREGION This function will create a 3D peri-tumoral region (ie. an expansion surrounding the tumor segmentation) 
 %           with a distance specified (in mm)
 % Created by:       Sarah Mattonen
