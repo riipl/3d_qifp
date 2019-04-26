@@ -16,6 +16,11 @@ function  outputStructure = load_volume(input)
 %                      - cast the cropped image to double when rescaling
 %                      - updated to scale by slice specific slope and intercept
 % Edited on:        2017-04-06
+% Edited by:        Sarah Mattonen 
+%                      - added check to determine if in plane indicies are
+%                      out of bounds when adding padding (initially for MMG
+%                      images with segmentation at image boundary)
+% Edited on:        2019-04-26
 
 %% Set custom dicom dictionary
 dicomDictPath = strcat(strrep(which(mfilename),[mfilename '.m'],''), 'dicom-dict.txt');
@@ -286,7 +291,24 @@ dicomSegmentationObjectXFirstIndex = dicomSegmentationObjectXIndexArray(1) - ...
 dicomSegmentationObjectXLastIndex  = dicomSegmentationObjectXIndexArray(end) + ...
     xVolumePaddingInVoxels;
 
-%% Lets Load the Dicom Images. 
+% Check added by Sarah to eliminate negative or out of bound indices if there isn't enough room for in plane padding. 
+if dicomSegmentationObjectYFirstIndex < 1
+    dicomSegmentationObjectYFirstIndex = 1;
+end
+
+if dicomSegmentationObjectYLastIndex > size(dicomSegmentationObjectMask,2)
+    dicomSegmentationObjectYLastIndex = size(dicomSegmentationObjectMask,2);
+end
+
+if dicomSegmentationObjectXFirstIndex < 1
+    dicomSegmentationObjectXFirstIndex = 1;
+end
+
+if dicomSegmentationObjectXLastIndex > size(dicomSegmentationObjectMask,1)
+    dicomSegmentationObjectXLastIndex = size(dicomSegmentationObjectMask,1);
+end
+
+%% Lets Load the Dicom Images.
 
 % Lets initialize the result array
 dicomImageArray = zeros( ...
