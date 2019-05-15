@@ -296,16 +296,16 @@ if dicomSegmentationObjectYFirstIndex < 1
     dicomSegmentationObjectYFirstIndex = 1;
 end
 
-if dicomSegmentationObjectYLastIndex > size(dicomSegmentationObjectMask,2)
-    dicomSegmentationObjectYLastIndex = size(dicomSegmentationObjectMask,2);
+if dicomSegmentationObjectYLastIndex > size(dicomSegmentationObjectMask,1)
+    dicomSegmentationObjectYLastIndex = size(dicomSegmentationObjectMask,1);
 end
 
 if dicomSegmentationObjectXFirstIndex < 1
     dicomSegmentationObjectXFirstIndex = 1;
 end
 
-if dicomSegmentationObjectXLastIndex > size(dicomSegmentationObjectMask,1)
-    dicomSegmentationObjectXLastIndex = size(dicomSegmentationObjectMask,1);
+if dicomSegmentationObjectXLastIndex > size(dicomSegmentationObjectMask,2)
+    dicomSegmentationObjectXLastIndex = size(dicomSegmentationObjectMask,2);
 end
 
 %% Lets Load the Dicom Images.
