@@ -1,4 +1,4 @@
-function haralick = processGLCM( glcm )
+function haralick = processGLCM( glcm, entropyLogBase )
 %PROCESSGLCM Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -42,8 +42,14 @@ function haralick = processGLCM( glcm )
 % Entropy is the randomness or the degree of disorder present in the image. 
 % The value of entropy is the largest when all elements of the cooccurrence 
 % matrix are the same and small when elements are unequal
-    haralick.entropy = -nansum(glcm(:).*log10(glcm(:)));
-
+    if entropyLogBase == 2
+        haralick.entropy = -nansum(glcm(:).*log2(glcm(:)));
+    elseif entropyLogBase == 10    
+        haralick.entropy = -nansum(glcm(:).*log10(glcm(:)));
+    else
+        logger('WARN', ['Invalid entropy log base provided - using log base 10']);
+        haralick.entropy = -nansum(glcm(:).*log10(glcm(:)));
+    end
 %% Correlation  
 % Correlation feature shows the linear dependency of gray level values in 
 % the cooccurrence matrix   
