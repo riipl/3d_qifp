@@ -16,6 +16,11 @@ function  outputStructure = load_volume(input)
 %                      - cast the cropped image to double when rescaling
 %                      - updated to scale by slice specific slope and intercept
 % Edited on:        2017-04-06
+% Edited by:        Sarah Mattonen 
+%                      - added check to determine if in plane indicies are
+%                      out of bounds when adding padding (initially for MMG
+%                      images with segmentation at image boundary)
+% Edited on:        2019-04-26
 
 %% Set custom dicom dictionary
 dicomDictPath = strcat(strrep(which(mfilename),[mfilename '.m'],''), 'dicom-dict.txt');
@@ -80,15 +85,18 @@ numSlicesDSO = numel(fieldnames(dicomSegmentationObjectInfo. ...
 zResolutions = zeros(numSlicesDSO,1);
 
 %% Find Z vector direction
-imageOrientation = dicomImageInfo.ImageOrientationPatient;
-dc = zeros(2,3);
-for row=1:2
-    for col=1:3
-        dc(row,col) = imageOrientation((row-1)*3+col);
+if dicomImageInfo.Modality == 'MG'
+    zVector = 0;
+else
+    imageOrientation = dicomImageInfo.ImageOrientationPatient;
+    dc = zeros(2,3);
+    for row=1:2
+        for col=1:3
+            dc(row,col) = imageOrientation((row-1)*3+col);
+        end
     end
+    zVector =cross(dc(1,:), dc(2,:));
 end
-zVector =cross(dc(1,:), dc(2,:));
-
 % Also save instance numbers and acquisition times for helping with loading
 % later on.
 dicomAcquisitionTimes = double.empty(numSlicesDSO, 0);
@@ -100,7 +108,12 @@ for nSDSO = 1:numSlicesDSO
         (['Item_' num2str(nSDSO)]).ReferencedSOPInstanceUID;
 
     tmpDicomImageInfo2 = dicominfo(dcmImageFileArray(tmpSDSO));
-    zResolutions(nSDSO) = zVector * tmpDicomImageInfo2.ImagePositionPatient;
+    
+    if dicomImageInfo.Modality == 'MG'
+        zResolutions(nSDSO) = 0;
+    else
+        zResolutions(nSDSO) = zVector * tmpDicomImageInfo2.ImagePositionPatient;
+    end
     
     % If acquisitionTime exists:
     if (isfield(tmpDicomImageInfo2, 'AcquisitionTime'))
@@ -129,12 +142,19 @@ nonSortedzResolutions = zResolutions;
 zResolutions = sort(zResolutions);
 
 % Find X and Y pixel determined
-yDicomSegmentationResolution = dicomImageInfo.PixelSpacing(1);
-xDicomSegmentationResolution = dicomImageInfo.PixelSpacing(2);
+if dicomImageInfo.Modality == 'MG'
+    yDicomSegmentationResolution = dicomImageInfo.ImagerPixelSpacing(1);
+    xDicomSegmentationResolution = dicomImageInfo.ImagerPixelSpacing(2);
+else
+    yDicomSegmentationResolution = dicomImageInfo.PixelSpacing(1);
+    xDicomSegmentationResolution = dicomImageInfo.PixelSpacing(2);
+end
 
 % Z voxel spacing determined by the minimum distance between slices
 if (numel(zResolutions) > 1)
     zDicomSegmentationResolution = min(abs(diff(zResolutions)));
+elseif dicomImageInfo.Modality == 'MG'
+    zDicomSegmentationResolution = 1;
 else
     zDicomSegmentationResolution = dicomImageInfo.SpacingBetweenSlices;
 end
@@ -271,7 +291,24 @@ dicomSegmentationObjectXFirstIndex = dicomSegmentationObjectXIndexArray(1) - ...
 dicomSegmentationObjectXLastIndex  = dicomSegmentationObjectXIndexArray(end) + ...
     xVolumePaddingInVoxels;
 
-%% Lets Load the Dicom Images. 
+% Check added by Sarah to eliminate negative or out of bound indices if there isn't enough room for in plane padding. 
+if dicomSegmentationObjectYFirstIndex < 1
+    dicomSegmentationObjectYFirstIndex = 1;
+end
+
+if dicomSegmentationObjectYLastIndex > size(dicomSegmentationObjectMask,1)
+    dicomSegmentationObjectYLastIndex = size(dicomSegmentationObjectMask,1);
+end
+
+if dicomSegmentationObjectXFirstIndex < 1
+    dicomSegmentationObjectXFirstIndex = 1;
+end
+
+if dicomSegmentationObjectXLastIndex > size(dicomSegmentationObjectMask,2)
+    dicomSegmentationObjectXLastIndex = size(dicomSegmentationObjectMask,2);
+end
+
+%% Lets Load the Dicom Images.
 
 % Lets initialize the result array
 dicomImageArray = zeros( ...
@@ -376,4 +413,8 @@ end
 outputStructure.segmentationVOI = logical(outputStructure.segmentationVOI);
 outputStructure.segmentationInfo = dicomSegmentationObjectInfo;
 outputStructure.segmentationInfo.zResolution = zDicomSegmentationResolution;
+outputStructure.segmentationInfo.segmentationOrigin = ...
+    [dicomSegmentationObjectYFirstIndex, ...
+    dicomSegmentationObjectXFirstIndex, ...
+    dicomSegmentationObjectZFirstIndexOrig];
 end
